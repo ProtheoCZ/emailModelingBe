@@ -1,4 +1,6 @@
 import json
+import random
+
 import networkx as nx
 
 
@@ -6,6 +8,7 @@ class GraphProcessor:
     def __init__(self, json_graph_name):
         self.graph = None
         self.json_graph_name = json_graph_name
+        self.active_node = '1'
 
     def json_loader(self):
         # print(self.json_graph_name)
@@ -83,15 +86,15 @@ class GraphProcessor:
 
         ret_json = {"graphs": []}
 
-        active_node = '1'
-        for i in range(500):
-            for node in nx.all_neighbors(self.graph, active_node):
-                self.graph.nodes[node]['displayed_color'] = 'rgb(255,0,0)'
-                active_node = self.graph.nodes[node]['id']
-                break
-
-            if i % 100 == 0:
+        for i in range(50):
+            if i % 10 == 0:
                 ret_json["graphs"].append(self.networkx_to_json())
+
+            # for node in nx.all_neighbors(self.graph, self.active_node):
+            #     self.graph.nodes[node]['displayed_color'] = 'rgb(255,0,0)'
+            #     self.active_node = self.graph.nodes[node]['id']
+
+            self.graph.nodes[str(random.randint(1, 100))]['displayed_color'] = 'rgb(255,0,0)'
 
         return ret_json
 
