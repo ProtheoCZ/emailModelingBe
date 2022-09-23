@@ -2,13 +2,16 @@ import json
 import random
 
 import networkx as nx
+from .L_NK_algorithm import LnkAlg
 
 
 class GraphProcessor:
     def __init__(self, json_graph_name):
+
         self.graph = None
         self.json_graph_name = json_graph_name
         self.active_node = '1'
+        self.json_to_networkx()
 
     def json_loader(self):
         # print(self.json_graph_name)
@@ -62,7 +65,7 @@ class GraphProcessor:
             ret_json["nodes"].append(json_node)
 
         for edge in self.graph.edges:
-            print(edge[0])
+            # print(edge[0])
             # print(edge)
             json_edge = {
                 "source": edge[0],
@@ -77,7 +80,7 @@ class GraphProcessor:
         return ret_json
 
     def process_graph(self):
-        self.json_to_networkx()
+        # self.json_to_networkx()  uncomment if it breaks
 
         for node in self.graph.nodes:
             self.graph.nodes[node]['displayed_color'] = 'rgb(0,0,0)'
@@ -98,6 +101,18 @@ class GraphProcessor:
 
         return ret_json
 
+    def process_graph_lnk(self):
+
+        lnk = LnkAlg(self.graph, 0.65, 0.95, 0.22)
+        ret_networkx = lnk.run_alg()
+
+        ret_json = {"graphs": []}
+
+        for graph in ret_networkx:
+            self.graph = graph
+            ret_json['graphs'].append(self.networkx_to_json())
+
+        return ret_json
 
 
 
