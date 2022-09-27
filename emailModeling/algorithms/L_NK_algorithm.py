@@ -18,6 +18,7 @@ class LnkAlg:
         if isinstance(graph, nx.Graph):
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
+            self.start_node = self.graph.nodes['486']
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
         self.back_rate = back_rate  # 0.95
@@ -51,31 +52,45 @@ class LnkAlg:
 
     def run_alg(self):
         # TODO solve duplicate active nodes, color edges
-        print(self.start_node['id'])
+        # put t as node param and check if "node in active_nodes"
+        print("start node is " + self.start_node['id'])
         ret_array = []
         self.graph.nodes[self.start_node['id']]['displayed_color'] = 'rgb(242,245,66)'
-        # self.current_node['displayed_color'] = 'rgb(242,245,66)'  # wrong
         active_nodes = []  # array of tuples, (node,t)
         for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
-                # active_nodes.append = [(node, self.generate_t())]
-                active_nodes.append((node, self.generate_t()))
+                nx.set_node_attributes(self.graph, {node: self.generate_t()}, name="t")
+                # active_nodes.append((node, self.generate_t()))
+                active_nodes.append(node)
 
         for i in range(2000):  # select better range
             for node in active_nodes:
-                if i == node[1]:
+                # if i == node[1]:
+                if i == self.graph.nodes[node]['t']:
                     if random.random() - self.back_rate >= 0:
                         if random.random() <= self.post_rate:
-                            self.graph.nodes[node[0]]['displayed_color'] = 'rgb(0,255,0)'
+                            self.graph.nodes[node]['displayed_color'] = 'rgb(0,255,0)'
                         else:
-                            self.graph.nodes[node[0]]['displayed_color'] = 'rgb(0,0,255)'
+                            self.graph.nodes[node]['displayed_color'] = 'rgb(0,0,255)'
 
-                        for neighbor in self.graph.neighbors(node[0]):
+                        for neighbor in self.graph.neighbors(node):
                             if random.random() - self.discard_rate >= 0:
-                                active_nodes.append((neighbor, i + self.generate_t()))
-                active_nodes.pop(0)
+
+                                is_already_active = False
+                                for active_node in active_nodes:
+                                    if active_node == neighbor:
+                                        is_already_active = True
+                                        break
+
+                                if not is_already_active:
+                                    nx.set_node_attributes(self.graph, {neighbor: self.generate_t()}, name="t")
+                                    # active_nodes.append((neighbor, i + self.generate_t()))
+                                    active_nodes.append(neighbor)
+                # active_nodes.pop(0) # “collections.deque”, which has a “popleft” method which is O(1).
 
             if i % 100 == 0:
                 ret_array.append(self.graph)
 
+        for node in active_nodes:
+            print(node)
         return ret_array
