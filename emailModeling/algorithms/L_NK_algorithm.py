@@ -18,7 +18,8 @@ class LnkAlg:
         if isinstance(graph, nx.Graph):
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-            self.start_node = self.graph.nodes['486']
+            self.start_node = self.graph.nodes['486']  # for editedGraph, don't forget to remove !
+            self.start_node = self.graph.nodes['422']  # for emaileuall, don't forget to remove !
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
         self.back_rate = back_rate  # 0.95
@@ -48,49 +49,55 @@ class LnkAlg:
             self.probabilities.append(self.integral_array[i][2])
 
     def generate_t(self):  # returns int
-        return 10*random.choices(self.values, weights=self.probabilities)[0]
+        return int(10*random.choices(self.values, weights=self.probabilities)[0])
 
     def run_alg(self):
-        # TODO solve duplicate active nodes, color edges
-        # put t as node param and check if "node in active_nodes"
+        # TODO color edges
         print("start node is " + self.start_node['id'])
         ret_array = []
         self.graph.nodes[self.start_node['id']]['displayed_color'] = 'rgb(242,245,66)'
-        active_nodes = []  # array of tuples, (node,t)
+        active_nodes = []  # array of nodes with t param, rewrite as tuple of nodes (sender,receiver with t param)
+        responders = []
         for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
                 nx.set_node_attributes(self.graph, {node: self.generate_t()}, name="t")
-                # active_nodes.append((node, self.generate_t()))
                 active_nodes.append(node)
+                # active_nodes.append(self.start_node,node)
 
-        for i in range(2000):  # select better range
+        for i in range(2001):  # select better range
             for node in active_nodes:
-                # if i == node[1]:
                 if i == self.graph.nodes[node]['t']:
+                # if i == self.graph.nodes[node[1]]['t']:
                     if random.random() - self.back_rate >= 0:
                         if random.random() <= self.post_rate:
                             self.graph.nodes[node]['displayed_color'] = 'rgb(0,255,0)'
+                            responders.append(node)
                         else:
                             self.graph.nodes[node]['displayed_color'] = 'rgb(0,0,255)'
+                            responders.append(node)
 
                         for neighbor in self.graph.neighbors(node):
                             if random.random() - self.discard_rate >= 0:
-
                                 is_already_active = False
+
                                 for active_node in active_nodes:
                                     if active_node == neighbor:
+                                    # if active_node[1] == neighbor:
                                         is_already_active = True
                                         break
 
                                 if not is_already_active:
-                                    nx.set_node_attributes(self.graph, {neighbor: self.generate_t()}, name="t")
-                                    # active_nodes.append((neighbor, i + self.generate_t()))
+                                    nx.set_node_attributes(self.graph, {neighbor: self.generate_t() + i}, name="t")
                                     active_nodes.append(neighbor)
-                # active_nodes.pop(0) # “collections.deque”, which has a “popleft” method which is O(1).
+                                    # active_nodes.append(node, neighbor)
+            print("responders len is " + str(len(responders)) + " and i is " + str(i))
+            print(responders)
 
-            if i % 100 == 0:
+            # if i % 1 == 0:
+            if i == 2000:
                 ret_array.append(self.graph)
 
-        for node in active_nodes:
-            print(node)
+        # for node in active_nodes:
+        #     print(node)
+
         return ret_array

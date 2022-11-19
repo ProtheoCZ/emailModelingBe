@@ -103,14 +103,15 @@ class GraphProcessor:
 
     def process_graph_lnk(self):
 
-        lnk = LnkAlg(self.graph, 0.65, 0.95, 0.22)
+        lnk = LnkAlg(self.graph, 0.65, 0.85, 0.22)
         ret_networkx = lnk.run_alg()
 
         ret_json = {"graphs": []}
 
         for graph in ret_networkx:
             self.graph = graph
-            ret_json['graphs'].append(self.networkx_to_json())
+            ret_json["graphs"].append(self.networkx_to_json())
+
 
         return ret_json
 
