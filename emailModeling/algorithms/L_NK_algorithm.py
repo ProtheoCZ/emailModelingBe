@@ -4,7 +4,6 @@ import networkx as nx
 
 
 class LnkAlg:
-
     def __init__(self, graph, discard_rate, back_rate, post_rate):
         self.lower_bound = 0.05
         self.upper_bound = 0.1
@@ -14,11 +13,14 @@ class LnkAlg:
         self.values = []
         self.probabilities = []
         self.graph = nx.Graph  # remove this
+        self.POST_COLOR = 'rgb(0,255,0)'
+        self.RESPONSE_COLOR = 'rgb(0,0,255)'
+        self.START_COLOR = 'rgb(242,245,66)'
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-            self.start_node = self.graph.nodes['486']  # for editedGraph, don't forget to remove !
+            # self.start_node = self.graph.nodes['486']  # for editedGraph, don't forget to remove !
             self.start_node = self.graph.nodes['422']  # for emaileuall, don't forget to remove !
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
@@ -51,11 +53,57 @@ class LnkAlg:
     def generate_t(self):  # returns int
         return int(10*random.choices(self.values, weights=self.probabilities)[0])
 
+    def getOnlyColoredNodes(self):
+        ret_graph = nx.Graph()
+        for node in self.graph.nodes:
+            if self.graph.nodes[node]['displayed_color'] == self.POST_COLOR or self.graph.nodes[node]['displayed_color'] == self.RESPONSE_COLOR\
+                    or self.graph.nodes[node]['displayed_color'] == self.START_COLOR:
+                ret_graph.add_node(
+                    self.graph.nodes[node]['id'],
+                    x=self.graph.nodes[node]['x'],
+                    y=self.graph.nodes[node]['y'],
+                    size=self.graph.nodes[node]['size'],
+                    displayed_color=self.graph.nodes[node]['displayed_color'],
+                    label=self.graph.nodes[node]['label'],
+                    id=self.graph.nodes[node]['id']
+                )
+        i = 1
+        for node in ret_graph:
+            for neighbor in ret_graph:
+                if self.graph.has_edge(node, neighbor) and node != neighbor:
+                    ret_graph.add_edge(
+                        node,
+                        neighbor,
+                        displayed_color='rgb(0,0,0)',
+                        size=1,
+                        id=i
+                    )
+                    i += 1
+
+        return ret_graph
+
+    def get_avg_post_children(self, graph):
+        if isinstance(graph, nx.Graph):
+            val_arr = []
+            for node in graph.nodes:
+                if graph.nodes[node]['displayed_color'] == self.POST_COLOR:
+                    neighbors = [n for n in graph.neighbors(node)]
+                    number_of_posting_neighbors = 0
+                    for neighbor in neighbors:
+                        if graph.nodes[neighbor]['displayed_color'] == self.POST_COLOR:
+                            number_of_posting_neighbors += 1
+                    val_arr.append(number_of_posting_neighbors)
+
+            print("average number of posting neighbors is: " + str(sum(val_arr)/len(val_arr)))
+            non_zero_val_arr = [v for v in val_arr if v > 0]
+            print("average number non zero posting neighbors is: " + str(sum(non_zero_val_arr)/len(non_zero_val_arr)))
+            # return sum(val_arr)/len(val_arr)
+
     def run_alg(self):
         # TODO color edges
         print("start node is " + self.start_node['id'])
         ret_array = []
-        self.graph.nodes[self.start_node['id']]['displayed_color'] = 'rgb(242,245,66)'
+        self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
         active_nodes = []  # array of nodes with t param, rewrite as tuple of nodes (sender,receiver with t param)
         responders = []
         for node in self.graph.neighbors(self.start_node['id']):
@@ -64,16 +112,16 @@ class LnkAlg:
                 active_nodes.append(node)
                 # active_nodes.append(self.start_node,node)
 
-        for i in range(2001):  # select better range
+        for i in range(1001):  # select better range
             for node in active_nodes:
                 if i == self.graph.nodes[node]['t']:
                 # if i == self.graph.nodes[node[1]]['t']:
                     if random.random() - self.back_rate >= 0:
                         if random.random() <= self.post_rate:
-                            self.graph.nodes[node]['displayed_color'] = 'rgb(0,255,0)'
+                            self.graph.nodes[node]['displayed_color'] = self.POST_COLOR
                             responders.append(node)
                         else:
-                            self.graph.nodes[node]['displayed_color'] = 'rgb(0,0,255)'
+                            self.graph.nodes[node]['displayed_color'] = self.RESPONSE_COLOR
                             responders.append(node)
 
                         for neighbor in self.graph.neighbors(node):
@@ -94,8 +142,11 @@ class LnkAlg:
             print(responders)
 
             # if i % 1 == 0:
-            if i == 2000:
-                ret_array.append(self.graph)
+            if i == 1000:
+                # ret_array.append(self.graph)
+                ret_graph = self.getOnlyColoredNodes()
+                self.get_avg_post_children(ret_graph)
+                ret_array.append(ret_graph)
 
         # for node in active_nodes:
         #     print(node)
