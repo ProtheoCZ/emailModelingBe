@@ -20,7 +20,7 @@ class LnkAlg:
         if isinstance(graph, nx.Graph):
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-            # self.start_node = self.graph.nodes['486']  # for editedGraph, don't forget to remove !
+            self.start_node = self.graph.nodes['486']  # for editedGraph, don't forget to remove !
             self.start_node = self.graph.nodes['422']  # for emaileuall, don't forget to remove !
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
@@ -94,10 +94,14 @@ class LnkAlg:
                             number_of_posting_neighbors += 1
                     val_arr.append(number_of_posting_neighbors)
 
-            print("average number of posting neighbors is: " + str(sum(val_arr)/len(val_arr)))
             non_zero_val_arr = [v for v in val_arr if v > 0]
+
+        if len(val_arr) and len(non_zero_val_arr) > 0:
+            print("average number of posting neighbors is: " + str(sum(val_arr)/len(val_arr)))
             print("average number non zero posting neighbors is: " + str(sum(non_zero_val_arr)/len(non_zero_val_arr)))
             # return sum(val_arr)/len(val_arr)
+        else:
+            print("nobody responded!")
 
     def run_alg(self):
         # TODO color edges

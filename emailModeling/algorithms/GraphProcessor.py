@@ -1,5 +1,7 @@
 import json
 import random
+import sympy as sy
+import pandas as pd
 
 import networkx as nx
 from .L_NK_algorithm import LnkAlg
@@ -105,6 +107,8 @@ class GraphProcessor:
 
         lnk = LnkAlg(self.graph, 0.65, 0.90, 0.22)
         ret_networkx = lnk.run_alg()
+        self.get_expected_distribution()
+        self.get_degree_distribution()
 
         ret_json = {"graphs": []}
 
@@ -112,8 +116,46 @@ class GraphProcessor:
             self.graph = graph
             ret_json["graphs"].append(self.networkx_to_json())
 
-
         return ret_json
 
+    def f(self, x, exponent):
+        return x ** exponent
 
+    def get_expected_distribution(self):
+        x = sy.Symbol("x")
+
+        exponent = -2
+        integral_dict = {}
+
+        for i in range(3):
+            integral_dict["x^" + str(exponent - i)] = []
+            i_sum = 0
+            for j in range(10):
+                integral = sy.integrate(self.f(x, exponent-i), (x, 1+j, 2+j))
+                i_sum += integral
+                integral_dict["x^" + str(exponent-i)].append([1+j, 2+j, integral])
+
+            for k in range(10):
+                integral_dict["x^" + str(exponent-i)][k][2] = integral_dict["x^" + str(exponent-i)][k][2]/i_sum
+        pd.options.display.float_format = '${:,.2f}'.format
+        print(pd.DataFrame(data=integral_dict))
+
+    def get_degree_distribution(self):
+        if isinstance(self.graph, nx.Graph):
+            number_of_nodes = self.graph.number_of_nodes()
+            degree_distribution = [0 for _ in range(number_of_nodes)]
+            cumulative_degree_distribution = [0 for _ in range(number_of_nodes)]
+            cumulative_percentage = 0
+            for node in self.graph.nodes:
+                number_of_neighbors = sum(1 for _ in nx.neighbors(self.graph, node))
+                degree_distribution[number_of_neighbors] += 1
+                cumulative_degree_distribution[number_of_neighbors] += 1
+
+            for i in range(number_of_nodes):
+                nodes_with_degree = degree_distribution[i]
+                degree_percentage = nodes_with_degree/number_of_nodes * 100
+                cumulative_percentage += degree_percentage
+                if nodes_with_degree > 0:
+                    print("degree " + str(i) + ": " + str(nodes_with_degree) + " nodes | chance " + str(degree_percentage) + "% "
+                          + "cumulative " + str(cumulative_percentage) + "%" + "\n")
 
