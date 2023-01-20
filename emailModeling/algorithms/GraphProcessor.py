@@ -7,6 +7,20 @@ import networkx as nx
 from .L_NK_algorithm import LnkAlg
 
 
+def get_fraction_of_nodes_with_one_child(graph):
+    if isinstance(graph, nx.Graph):
+        number_of_nodes = graph.number_of_nodes()
+        number_of_nodes_with_one_child = 0
+
+        for node in graph.nodes:
+            if sum(1 for _ in graph.neighbors(node)) == 1:
+                number_of_nodes_with_one_child += 1
+
+        fraction = number_of_nodes_with_one_child / number_of_nodes
+        print("fraction of 1 neighbor nodes is " + str(fraction))
+        # return fraction
+
+
 class GraphProcessor:
     def __init__(self, json_graph_name):
 
@@ -109,6 +123,7 @@ class GraphProcessor:
         ret_networkx = lnk.run_alg()
         self.get_expected_distribution()
         self.get_degree_distribution()
+        get_fraction_of_nodes_with_one_child(ret_networkx[-1])
 
         ret_json = {"graphs": []}
 
@@ -158,4 +173,3 @@ class GraphProcessor:
                 if nodes_with_degree > 0:
                     print("degree " + str(i) + ": " + str(nodes_with_degree) + " nodes | chance " + str(degree_percentage) + "% "
                           + "cumulative " + str(cumulative_percentage) + "%" + "\n")
-

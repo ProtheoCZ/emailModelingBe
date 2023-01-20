@@ -8,7 +8,7 @@ class LnkAlg:
         self.lower_bound = 0.05
         self.upper_bound = 0.1
         self.interval_increase = 0.1
-        self.exponent = -3/2
+        self.exponent = -3 / 2
         self.integral_array = []
         self.values = []
         self.probabilities = []
@@ -21,8 +21,8 @@ class LnkAlg:
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
             self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
-            self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
-            self.start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
+            # self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
+            # self.start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
         self.back_rate = back_rate  # 0.95
@@ -31,7 +31,7 @@ class LnkAlg:
         self.generate_t_probabilities()
 
     def f(self, x):
-        return x**self.exponent
+        return x ** self.exponent
 
     def generate_t_probabilities(self):
         x = sy.Symbol("x")
@@ -52,12 +52,13 @@ class LnkAlg:
             self.probabilities.append(self.integral_array[i][2])
 
     def generate_t(self):  # returns int
-        return int(10*random.choices(self.values, weights=self.probabilities)[0])
+        return int(10 * random.choices(self.values, weights=self.probabilities)[0])
 
     def getOnlyColoredNodes(self):
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
-            if self.graph.nodes[node]['displayed_color'] == self.POST_COLOR or self.graph.nodes[node]['displayed_color'] == self.RESPONSE_COLOR\
+            if self.graph.nodes[node]['displayed_color'] == self.POST_COLOR or self.graph.nodes[node][
+                'displayed_color'] == self.RESPONSE_COLOR \
                     or self.graph.nodes[node]['displayed_color'] == self.START_COLOR:
                 ret_graph.add_node(
                     self.graph.nodes[node]['id'],
@@ -98,8 +99,9 @@ class LnkAlg:
             non_zero_val_arr = [v for v in val_arr if v > 0]
 
             if len(val_arr) and len(non_zero_val_arr) > 0:
-                print("average number of posting neighbors is: " + str(sum(val_arr)/len(val_arr)))
-                print("average number non zero posting neighbors is: " + str(sum(non_zero_val_arr)/len(non_zero_val_arr)))
+                print("average number of posting neighbors is: " + str(sum(val_arr) / len(val_arr)))
+                print("average number non zero posting neighbors is: " + str(
+                    sum(non_zero_val_arr) / len(non_zero_val_arr)))
                 # return sum(val_arr)/len(val_arr)
             else:
                 print("nobody responded!")
@@ -120,7 +122,7 @@ class LnkAlg:
         for i in range(1001):  # select better range
             for node in active_nodes:
                 if i == self.graph.nodes[node]['t']:
-                # if i == self.graph.nodes[node[1]]['t']:
+                    # if i == self.graph.nodes[node[1]]['t']:
                     if random.random() - self.back_rate >= 0:
                         if random.random() <= self.post_rate:
                             self.graph.nodes[node]['displayed_color'] = self.POST_COLOR
@@ -135,7 +137,7 @@ class LnkAlg:
 
                                 for active_node in active_nodes:
                                     if active_node == neighbor:
-                                    # if active_node[1] == neighbor:
+                                        # if active_node[1] == neighbor:
                                         is_already_active = True
                                         break
 
