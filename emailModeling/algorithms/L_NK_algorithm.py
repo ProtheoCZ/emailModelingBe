@@ -57,9 +57,8 @@ class LnkAlg:
     def getOnlyColoredNodes(self):
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
-            if self.graph.nodes[node]['displayed_color'] == self.POST_COLOR or self.graph.nodes[node][
-                'displayed_color'] == self.RESPONSE_COLOR \
-                    or self.graph.nodes[node]['displayed_color'] == self.START_COLOR:
+            displayed_color = self.graph.nodes[node]['displayed_color']
+            if displayed_color == self.POST_COLOR or displayed_color == self.RESPONSE_COLOR or displayed_color == self.START_COLOR:
                 ret_graph.add_node(
                     self.graph.nodes[node]['id'],
                     x=self.graph.nodes[node]['x'],

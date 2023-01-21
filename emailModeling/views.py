@@ -35,3 +35,9 @@ def get_coloring_process(request):  # POST
     else:
         return JsonResponse({"graphs": []})
 
+
+@csrf_exempt
+def get_gw_tree(request):  # GET
+    processor = GraphProcessor(None)
+    return JsonResponse(processor.generate_gw_tree())
+

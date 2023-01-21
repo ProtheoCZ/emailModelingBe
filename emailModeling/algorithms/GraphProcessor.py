@@ -5,6 +5,7 @@ import pandas as pd
 
 import networkx as nx
 from .L_NK_algorithm import LnkAlg
+from .G_W_algorithm import generate_tree
 
 
 def get_fraction_of_nodes_with_one_child(graph):
@@ -23,11 +24,11 @@ def get_fraction_of_nodes_with_one_child(graph):
 
 class GraphProcessor:
     def __init__(self, json_graph_name):
-
         self.graph = None
-        self.json_graph_name = json_graph_name
-        self.active_node = '1'
-        self.json_to_networkx()
+        if json_graph_name is not None:
+            self.json_graph_name = json_graph_name
+            self.active_node = '1'
+            self.json_to_networkx()
 
     def json_loader(self):
         # print(self.json_graph_name)
@@ -130,6 +131,13 @@ class GraphProcessor:
         for graph in ret_networkx:
             self.graph = graph
             ret_json["graphs"].append(self.networkx_to_json())
+
+        return ret_json
+
+    def generate_gw_tree(self):
+        ret_json = {"graphs": []}
+        self.graph = generate_tree()
+        ret_json["graphs"].append(self.networkx_to_json())
 
         return ret_json
 

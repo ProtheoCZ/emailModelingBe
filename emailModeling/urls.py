@@ -5,5 +5,6 @@ from . import views
 urlpatterns = [
     path('getGraph/', views.get_graph),
     path('getGraphList/', views.get_list_of_available_graphs),
-    path('getColoring/', views.get_coloring_process)
+    path('getColoring/', views.get_coloring_process),
+    path('getGwTree/', views.get_gw_tree)
    ]
