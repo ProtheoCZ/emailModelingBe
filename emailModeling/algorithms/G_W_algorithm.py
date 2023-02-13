@@ -3,7 +3,7 @@ import random
 
 NODE_COLOR = 'rgb(255,0,0)'
 SIZE = 4
-NUMBER_OF_GENERATIONS = 20
+NUMBER_OF_GENERATIONS = 100
 children_probabilities = [0.0246, 0.9525, 0.0217, 0.0012]
 children = [i for i in range(len(children_probabilities))]
 
@@ -31,14 +31,19 @@ def generate_tree():
     current_generation = [graph.nodes[current_node_id]]
     current_node_id += 1
 
+    number_of_branches = 0
     for i in range(NUMBER_OF_GENERATIONS):
         next_generation = []
-        for node in current_generation:
+        for index, node in enumerate(current_generation):
             number_of_children = int(random.choices(children, weights=children_probabilities, k=1)[0])
+            if number_of_children > 1:
+                number_of_branches += 1
+            if number_of_children == 0:
+                number_of_branches -= 1
             for j in range(number_of_children):
                 graph.add_node(
                     current_node_id,
-                    x=j,
+                    x=index + len(next_generation),
                     y=i,
                     size=SIZE,
                     displayed_color=NODE_COLOR,
