@@ -41,3 +41,11 @@ def get_gw_tree(request):  # GET
     processor = GraphProcessor(None)
     return JsonResponse(processor.generate_gw_tree())
 
+
+@csrf_exempt
+def get_full_lnk_sim(request):
+    if len(request.body.decode('utf-8')) > 0:
+        processor = GraphProcessor(request.body.decode('utf-8'))
+        processor.process_full_lnk()
+    return JsonResponse({"graphs": []})
+

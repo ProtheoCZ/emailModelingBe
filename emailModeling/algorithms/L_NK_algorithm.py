@@ -20,9 +20,10 @@ class LnkAlg:
         if isinstance(graph, nx.Graph):
             self.graph = graph
             self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-            self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
+            # self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
             # self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
             # self.start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
+            # self.start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
         self.back_rate = back_rate  # 0.95
@@ -107,7 +108,7 @@ class LnkAlg:
 
     def run_alg(self):
         # TODO color edges
-        print("start node is " + self.start_node['id'])
+        # print("start node is " + self.start_node['id'])
         ret_array = []
         self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
         active_nodes = []  # array of nodes with t param, rewrite as tuple of nodes (sender,receiver with t param)
@@ -144,17 +145,41 @@ class LnkAlg:
                                     nx.set_node_attributes(self.graph, {neighbor: self.generate_t() + i}, name="t")
                                     active_nodes.append(neighbor)
                                     # active_nodes.append(node, neighbor)
-            print("responders len is " + str(len(responders)) + " and i is " + str(i))
-            print(responders)
+            # print("responders len is " + str(len(responders)) + " and i is " + str(i))
+            # print(responders)
 
             # if i % 1 == 0:
             if i == 1000:
                 # ret_array.append(self.graph)
                 ret_graph = self.getOnlyColoredNodes()
-                self.get_avg_post_children(ret_graph)
+                # self.get_avg_post_children(ret_graph)
                 ret_array.append(ret_graph)
 
         # for node in active_nodes:
         #     print(node)
 
         return ret_array
+
+    def run_full_simulation(self, critical_len, n):
+        # orig_back_rate = self.back_rate
+        orig_post_rate = self.post_rate
+        number_of_br_increases = round((1 - self.back_rate) * 100)
+        number_of_pr_increases = round((0.35 - self.post_rate) * 100)
+        graph_number = 1
+        run_number = 1
+        number_of_runs = n*number_of_pr_increases*number_of_br_increases
+        for i in range(number_of_br_increases):
+            self.post_rate = orig_post_rate
+            self.back_rate += 0.01
+            for j in range(number_of_pr_increases):
+                for k in range(n):
+                    graph = self.run_alg()[-1]
+                    if graph.number_of_nodes() >= critical_len:
+                        graph_name = "fullSimData/graph_" + str(graph_number) + "_br_" + str(self.back_rate) + "_pr_" + str(self.post_rate) + ".gexf"
+                        nx.write_gexf(graph, graph_name, version="1.2draft")
+                        print("Graph run# " + str(run_number) + " exceeded critical length. Written as graph #" + str(graph_number))
+                        graph_number += 1
+                    print("run #" + str(run_number) + " of " + str(number_of_runs))
+                    run_number += 1
+
+                self.post_rate += 0.01
