@@ -16,14 +16,17 @@ class LnkAlg:
         self.POST_COLOR = 'rgb(0,255,0)'
         self.RESPONSE_COLOR = 'rgb(0,0,255)'
         self.START_COLOR = 'rgb(242,245,66)'
+        self.START_FOLDER = 'fullSimData4'
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
-            self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-            # self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
+            # self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
+            self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
             # self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
             # self.start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
             # self.start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
+            # self.start_node = self.graph.nodes['122']
+            self.orig_graph = self.graph.copy()
 
         self.discard_rate = discard_rate  # 0.65, 0.5-0.75
         self.back_rate = back_rate  # 0.95
@@ -175,11 +178,12 @@ class LnkAlg:
                 for k in range(n):
                     graph = self.run_alg()[-1]
                     if graph.number_of_nodes() >= critical_len:
-                        graph_name = "fullSimData/graph_" + str(graph_number) + "_br_" + str(self.back_rate) + "_pr_" + str(self.post_rate) + ".gexf"
+                        graph_name = self.START_FOLDER + "/graph_" + str(graph_number) + "_br_" + str(self.back_rate) + "_pr_" + str(self.post_rate) + ".gexf"
                         nx.write_gexf(graph, graph_name, version="1.2draft")
                         print("Graph run# " + str(run_number) + " exceeded critical length. Written as graph #" + str(graph_number))
                         graph_number += 1
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
+                    self.graph = self.orig_graph.copy()
 
                 self.post_rate += 0.01
