@@ -16,6 +16,7 @@ class LnkAlg:
         self.POST_COLOR = 'rgb(0,255,0)'
         self.RESPONSE_COLOR = 'rgb(0,0,255)'
         self.START_COLOR = 'rgb(242,245,66)'
+        self.RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
         self.START_FOLDER = 'fullSimData4'
 
         if isinstance(graph, nx.Graph):
@@ -76,11 +77,11 @@ class LnkAlg:
         i = 1
         for node in ret_graph:
             for neighbor in ret_graph:
-                if self.graph.has_edge(node, neighbor) and node != neighbor:
+                if self.graph.has_edge(node, neighbor) and node != neighbor and self.graph.get_edge_data(node, neighbor)['displayed_color'] == self.RESPONSE_EDGE_COLOR:
                     ret_graph.add_edge(
                         node,
                         neighbor,
-                        displayed_color='rgb(0,0,0)',
+                        displayed_color=self.RESPONSE_EDGE_COLOR,
                         size=1,
                         id=i
                     )
@@ -161,26 +162,33 @@ class LnkAlg:
         for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
                 nx.set_node_attributes(self.graph, {node: self.generate_t()}, name="t")
-                active_nodes.append(node)
+                active_nodes.append((self.start_node['id'], node))
                 # active_nodes.append(self.start_node,node)
 
         for i in range(1001):  # select better range
-            for node in active_nodes:
+            for node_pair in active_nodes:
+                node = node_pair[1]
+                sender = node_pair[0]
                 if i == self.graph.nodes[node]['t']:
                     # if i == self.graph.nodes[node[1]]['t']:
+                    attrs = {(sender, node): {'displayed_color': self.RESPONSE_EDGE_COLOR}}
                     if random.random() - self.back_rate >= 0:
                         if random.random() <= self.post_rate:
                             self.graph.nodes[node]['displayed_color'] = self.POST_COLOR
                             responders.append(node)
+                            nx.set_edge_attributes(self.graph, attrs)
+
                         else:
                             self.graph.nodes[node]['displayed_color'] = self.RESPONSE_COLOR
                             responders.append(node)
+                            nx.set_edge_attributes(self.graph, attrs)
 
                         for neighbor in self.graph.neighbors(node):
                             if random.random() - self.discard_rate >= 0:
                                 is_already_active = False
 
-                                for active_node in active_nodes:
+                                for active_node_pair in active_nodes:
+                                    active_node = active_node_pair[1]
                                     if active_node == neighbor:
                                         # if active_node[1] == neighbor:
                                         is_already_active = True
@@ -188,7 +196,7 @@ class LnkAlg:
 
                                 if not is_already_active:
                                     nx.set_node_attributes(self.graph, {neighbor: self.generate_t() + i}, name="t")
-                                    active_nodes.append(neighbor)
+                                    active_nodes.append((node, neighbor))
                                     # active_nodes.append(node, neighbor)
             # print("responders len is " + str(len(responders)) + " and i is " + str(i))
             # print(responders)
