@@ -122,9 +122,9 @@ class GraphProcessor:
 
         lnk = LnkAlg(self.graph, 0.65, 0.90, 0.22)
         ret_networkx = lnk.run_alg()
-        self.get_expected_distribution()
-        self.get_degree_distribution()
-        get_fraction_of_nodes_with_one_child(ret_networkx[-1])
+        # self.get_expected_distribution()
+        # self.get_degree_distribution() todo consider to turn back on
+        # get_fraction_of_nodes_with_one_child(ret_networkx[-1]) todo consider to turn back on
 
         ret_json = {"graphs": []}
 

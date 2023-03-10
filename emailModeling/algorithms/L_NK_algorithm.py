@@ -111,11 +111,11 @@ class LnkAlg:
                     ret_graph.add_edge(
                         node,
                         neighbor,
-                        displayed_color='rgb(0,0,0)',
+                        displayed_color=self.RESPONSE_EDGE_COLOR,
                         size=1,
                         id=idx
                     )
-
+        print("isTree = " + str(nx.is_tree(ret_graph)))
         return ret_graph
 
     def add_node_to_graph(self, graph, node):
