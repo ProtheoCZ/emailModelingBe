@@ -20,7 +20,7 @@ class LnkAlg:
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
-            # self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
+            self.start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
             self.start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
             # self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
             # self.start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
@@ -63,14 +63,15 @@ class LnkAlg:
         for node in self.graph.nodes:
             displayed_color = self.graph.nodes[node]['displayed_color']
             if displayed_color == self.POST_COLOR or displayed_color == self.RESPONSE_COLOR or displayed_color == self.START_COLOR:
+                node_to_add = self.graph.nodes[node]
                 ret_graph.add_node(
-                    self.graph.nodes[node]['id'],
-                    x=self.graph.nodes[node]['x'],
-                    y=self.graph.nodes[node]['y'],
-                    size=self.graph.nodes[node]['size'],
-                    displayed_color=self.graph.nodes[node]['displayed_color'],
-                    label=self.graph.nodes[node]['label'],
-                    id=self.graph.nodes[node]['id']
+                    node_to_add['id'],
+                    x=node_to_add['x'],
+                    y=node_to_add['y'],
+                    size=node_to_add['size'],
+                    displayed_color=node_to_add['displayed_color'],
+                    label=node_to_add['label'],
+                    id=node_to_add['id']
                 )
         i = 1
         for node in ret_graph:
@@ -86,6 +87,47 @@ class LnkAlg:
                     i += 1
 
         return ret_graph
+
+    def treeify(self, graph):
+        ret_graph = nx.Graph()
+        start_node = None
+        post_nodes = []
+        for node in graph.nodes:
+            displayed_color = graph.nodes[node]['displayed_color']
+            if displayed_color == self.POST_COLOR:
+                post_nodes.append(node)
+            if displayed_color == self.START_COLOR:
+                start_node = graph.nodes[node]
+
+        self.add_node_to_graph(ret_graph, start_node)
+
+        for i in range(len(post_nodes) - 1):
+            shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i+1])
+            for idx, node in enumerate(shortest_path):
+                self.add_node_to_graph(ret_graph, graph.nodes[node])
+                if idx + 1 < len(shortest_path):
+                    neighbor = shortest_path[idx+1]
+                    ret_graph.add_edge(
+                        node,
+                        neighbor,
+                        displayed_color='rgb(0,0,0)',
+                        size=1,
+                        id=idx
+                    )
+
+        return ret_graph
+
+    def add_node_to_graph(self, graph, node):
+        if isinstance(graph, nx.Graph):
+            graph.add_node(
+                node['id'],
+                x=node['x'],
+                y=node['y'],
+                size=node['size'],
+                displayed_color=node['displayed_color'],
+                label=node['label'],
+                id=node['id']
+            )
 
     def get_avg_post_children(self, graph):
         if isinstance(graph, nx.Graph):
@@ -114,7 +156,7 @@ class LnkAlg:
         # print("start node is " + self.start_node['id'])
         ret_array = []
         self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
-        active_nodes = []  # array of nodes with t param, rewrite as tuple of nodes (sender,receiver with t param)
+        active_nodes = []  # todo array of nodes with t param, rewrite as tuple of nodes (sender,receiver with t param)
         responders = []
         for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
@@ -158,6 +200,9 @@ class LnkAlg:
                 # self.get_avg_post_children(ret_graph)
                 ret_array.append(ret_graph)
 
+                ret_tree = self.treeify(ret_graph)
+                ret_array.append(ret_tree)
+
         # for node in active_nodes:
         #     print(node)
 
@@ -176,7 +221,7 @@ class LnkAlg:
             self.back_rate += 0.01
             for j in range(number_of_pr_increases):
                 for k in range(n):
-                    graph = self.run_alg()[-1]
+                    graph = self.run_alg()[-1]  # todo check which graph you actually want
                     if graph.number_of_nodes() >= critical_len:
                         graph_name = self.START_FOLDER + "/graph_" + str(graph_number) + "_br_" + str(self.back_rate) + "_pr_" + str(self.post_rate) + ".gexf"
                         nx.write_gexf(graph, graph_name, version="1.2draft")
