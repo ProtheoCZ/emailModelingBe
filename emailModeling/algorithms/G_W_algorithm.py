@@ -15,7 +15,6 @@ children = [i for i in range(len(children_probabilities))]
 # 3 - 0.0012
 # 4+ - 0
 def generate_tree():
-    # Todo fix node visual placement
     # cumulative_children_probabilities = [0.0246, 0.9771, 0.9988, 1]
     graph = nx.Graph()
     current_node_id = 1
