@@ -209,9 +209,9 @@ class LnkAlg:
         self.get_hub_start(n)
 
     def run_alg(self):
-        start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-        start_node = self.get_hub_start(50)  # todo for testing with hubs
-        # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
+        # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
+        # start_node = self.get_hub_start(50)  # todo for testing with hubs
+        start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
         # start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
         # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
         # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
@@ -219,43 +219,45 @@ class LnkAlg:
 
         ret_array = []
 
-        active_nodes = []
+        active_nodes = [[] for _ in range(self.ITERATION_COUNT)]
         responders = []
         for node in self.graph.neighbors(start_node['id']):
             if random.random() - self.discard_rate >= 0:
-                nx.set_node_attributes(self.graph, {node: self.generate_t()}, name="t")
-                active_nodes.append((start_node['id'], node))
+                t = self.generate_t()
+                nx.set_node_attributes(self.graph, {node: t}, name="t")
+                active_nodes[t].append((start_node['id'], node))
 
         for i in range(self.ITERATION_COUNT):  # todo select better range
-            for node_pair in active_nodes:
+            for node_pair in active_nodes[i]:
                 receiver = node_pair[1]
                 sender = node_pair[0]
-                if i == self.graph.nodes[receiver]['t']:
-                    attrs = {(sender, receiver): {'displayed_color': self.RESPONSE_EDGE_COLOR}}
-                    if random.random() - self.back_rate >= 0:
-                        if random.random() <= self.post_rate:
-                            self.graph.nodes[receiver]['displayed_color'] = self.POST_COLOR
-                            responders.append(receiver)
-                            nx.set_edge_attributes(self.graph, attrs)
 
-                        else:
-                            self.graph.nodes[receiver]['displayed_color'] = self.RESPONSE_COLOR
-                            responders.append(receiver)
-                            nx.set_edge_attributes(self.graph, attrs)
+                attrs = {(sender, receiver): {'displayed_color': self.RESPONSE_EDGE_COLOR}}
+                if random.random() - self.back_rate >= 0:
+                    if random.random() <= self.post_rate:
+                        self.graph.nodes[receiver]['displayed_color'] = self.POST_COLOR
+                        responders.append(receiver)
+                        nx.set_edge_attributes(self.graph, attrs)
 
-                        for neighbor in self.graph.neighbors(receiver):
-                            if random.random() - self.discard_rate >= 0:
-                                is_already_active = False
+                    else:
+                        self.graph.nodes[receiver]['displayed_color'] = self.RESPONSE_COLOR
+                        responders.append(receiver)
+                        nx.set_edge_attributes(self.graph, attrs)
 
-                                for active_node_pair in active_nodes:
-                                    active_node = active_node_pair[1]
-                                    if active_node == neighbor:
-                                        is_already_active = True
-                                        break
+                    for neighbor in self.graph.neighbors(receiver):
+                        if random.random() - self.discard_rate >= 0:
+                            is_already_active = False
 
-                                if not is_already_active:
-                                    nx.set_node_attributes(self.graph, {neighbor: self.generate_t() + i}, name="t")
-                                    active_nodes.append((receiver, neighbor))
+                            for active_node_pair in active_nodes[i]:
+                                active_node = active_node_pair[1]
+                                if active_node == neighbor:
+                                    is_already_active = True
+                                    break
+
+                            if not is_already_active:
+                                t = self.generate_t()
+                                nx.set_node_attributes(self.graph, {neighbor: t + i}, name="t")
+                                active_nodes[t].append((receiver, neighbor))
             # print("responders len is " + str(len(responders)) + " and i is " + str(i))
             # print(responders)
 
