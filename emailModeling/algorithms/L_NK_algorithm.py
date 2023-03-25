@@ -18,6 +18,7 @@ class LnkAlg:
         self.START_COLOR = 'rgb(242,245,66)'
         self.RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
         self.START_FOLDER = 'fullSimData6'
+        self.ITERATION_COUNT = 1001
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
@@ -198,9 +199,19 @@ class LnkAlg:
             else:
                 print("nobody responded!")
 
+    def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
+        graph_len = self.graph.number_of_nodes()
+        start_node = self.graph.nodes[str(random.randint(1, graph_len))]
+        neighbors = [n for n in self.graph.neighbors(start_node['id'])]
+        if len(neighbors) >= n:
+            return start_node
+
+        self.get_hub_start(n)
+
     def run_alg(self):
         start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-        start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
+        start_node = self.get_hub_start(50)  # todo for testing with hubs
+        # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
         # start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
         # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
         # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
@@ -215,7 +226,7 @@ class LnkAlg:
                 nx.set_node_attributes(self.graph, {node: self.generate_t()}, name="t")
                 active_nodes.append((start_node['id'], node))
 
-        for i in range(1001):  # todo select better range
+        for i in range(self.ITERATION_COUNT):  # todo select better range
             for node_pair in active_nodes:
                 receiver = node_pair[1]
                 sender = node_pair[0]
