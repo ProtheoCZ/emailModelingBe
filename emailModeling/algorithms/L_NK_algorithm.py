@@ -201,17 +201,16 @@ class LnkAlg:
 
     def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
         graph_len = self.graph.number_of_nodes()
-        start_node = self.graph.nodes[str(random.randint(1, graph_len))]
-        neighbors = [n for n in self.graph.neighbors(start_node['id'])]
-        if len(neighbors) >= n:
-            return start_node
-
-        self.get_hub_start(n)
+        while True:
+            start_node = self.graph.nodes[str(random.randint(1, graph_len))]
+            neighbors = [n for n in self.graph.neighbors(start_node['id'])]
+            if len(neighbors) >= n:
+                return start_node
 
     def run_alg(self):
         # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-        # start_node = self.get_hub_start(50)  # todo for testing with hubs
-        start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
+        start_node = self.get_hub_start(50)  # todo for testing with hubs
+        # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
         # start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
         # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
         # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
@@ -248,11 +247,12 @@ class LnkAlg:
                         if random.random() - self.discard_rate >= 0:
                             is_already_active = False
 
-                            for active_node_pair in active_nodes[i]:
-                                active_node = active_node_pair[1]
-                                if active_node == neighbor:
-                                    is_already_active = True
-                                    break
+                            for node_array in active_nodes:
+                                for active_node_pair in node_array:  # todo tohle je blbe po optimalizaci
+                                    active_node = active_node_pair[1]
+                                    if active_node == neighbor:
+                                        is_already_active = True
+                                        break
 
                             if not is_already_active:
                                 t = self.generate_t()
