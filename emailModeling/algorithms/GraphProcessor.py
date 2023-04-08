@@ -122,9 +122,9 @@ class GraphProcessor:
 
         lnk = LnkAlg(self.graph, 0.65, 0.90, 0.22)
         ret_networkx = lnk.run_alg()
-        # self.get_expected_distribution()
-        # self.get_degree_distribution() todo consider to turn back on
-        # get_fraction_of_nodes_with_one_child(ret_networkx[-1]) todo consider to turn back on
+        self.get_expected_distribution()
+        self.get_degree_distribution()  # todo consider to turn back on
+        # get_fraction_of_nodes_with_one_child(ret_networkx[0]) #todo consider to turn back on
 
         ret_json = {"graphs": []}
 
@@ -164,8 +164,9 @@ class GraphProcessor:
 
             for k in range(10):
                 integral_dict["x^" + str(exponent-i)][k][2] = integral_dict["x^" + str(exponent-i)][k][2]/i_sum
+        df = pd.DataFrame(data=integral_dict)
         pd.options.display.float_format = '${:,.2f}'.format
-        print(pd.DataFrame(data=integral_dict))
+        print(df)
 
     def get_degree_distribution(self):
         if isinstance(self.graph, nx.Graph):
