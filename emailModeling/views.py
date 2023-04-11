@@ -1,6 +1,7 @@
 import json
 import os
 from .algorithms.GraphProcessor import GraphProcessor
+from .algorithms.Relatability import simulate_relatability
 
 from django.http import JsonResponse, HttpResponse
 
@@ -48,4 +49,14 @@ def get_full_lnk_sim(request):
         processor = GraphProcessor(request.body.decode('utf-8'))
         processor.process_full_lnk()
     return JsonResponse({"graphs": []})
+
+
+@csrf_exempt
+def get_relatability_coloring(request):
+    if len(request.body.decode('utf-8')) > 0:
+        simulate_relatability(request.body.decode('utf-8'))
+        # processor = GraphProcessor(request.body.decode('utf-8'))
+        # return JsonResponse(processor.process_relatability())
+    else:
+        return JsonResponse({"graphs": []})
 
