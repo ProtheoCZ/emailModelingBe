@@ -54,7 +54,7 @@ def get_full_lnk_sim(request):
 @csrf_exempt
 def get_relatability_coloring(request):
     if len(request.body.decode('utf-8')) > 0:
-        simulate_relatability(request.body.decode('utf-8'))
+        return JsonResponse(simulate_relatability(request.body.decode('utf-8')))
         # processor = GraphProcessor(request.body.decode('utf-8'))
         # return JsonResponse(processor.process_relatability())
     else:

@@ -3,11 +3,16 @@ import random
 
 import networkx as nx
 
+BASE_PROBABILITY = 0.65  # probability denotes chance NOT to respond
+
 
 def simulate_relatability(graph_name):
     json_graph = json_loader(graph_name)
     graph = json_to_nx(json_graph)
-    age_relatability(graph)
+    ret_graph = age_relatability(graph)
+    ret_json = {"graphs": []}
+    ret_json["graphs"].append(nx_to_json(ret_graph))
+    return ret_json
 
 
 def json_loader(json_graph_name):
@@ -28,8 +33,8 @@ def json_to_nx(json_graph):
             displayed_color=node['color'],
             label=node['label'],
             id=node['id'],
-            age=node['age'],
-            gender=node['gender']
+            age=node['attributes']['age'],
+            gender=node['attributes']['gender']
         )
 
     for edge in json_graph['edges']:
@@ -77,7 +82,74 @@ def nx_to_json(graph):
 
 def age_relatability(graph):
     ret_graph = nx.Graph()
-    start_node = graph.nodes[str(random.randint(1, graph.number_of_nodes()))]
-    current_node = start_node
+    # start_node = graph.nodes[str(random.randint(1, graph.number_of_nodes()))]
+    start_node_id = random.sample(graph.nodes, 1)[0]
+    start_node = graph.nodes[start_node_id]
+    ret_graph.add_node(
+        start_node_id,
+        x=start_node['x'],
+        y=start_node['y'],
+        size=start_node['size'],
+        displayed_color=start_node['displayed_color'],
+        label=start_node['label'],
+        id=start_node_id,
+        age=start_node['age'],
+        gender=start_node['gender']
+        )
+    active_nodes = [start_node_id]
+    visited_nodes = [start_node_id]
+
+    current_node_idx = 0
+    current_node = start_node_id
+    edge_id = 0
+    while len(active_nodes) > current_node_idx:
+        current_age = graph.nodes[current_node]['age']
+        neighbors = nx.neighbors(graph, current_node)
+        for node_id in neighbors:
+            if node_id not in visited_nodes:
+                visited_nodes.append(node_id)
+                age = graph.nodes[node_id]['age']
+                total_probability = calculate_probability(current_age, age)
+
+                if random.random() > total_probability:  # todo < or > ?
+                    active_nodes.append(node_id)
+                    node = graph.nodes[node_id]
+                    ret_graph.add_node(
+                        node_id,
+                        x=node['x'],
+                        y=node['y'],
+                        size=node['size'],
+                        displayed_color=node['displayed_color'],
+                        label=node['label'],
+                        id=node_id,
+                        age=node['age'],
+                        gender=node['gender']
+                    )
+                    ret_graph.add_edge(
+                        current_node,
+                        node_id,
+                        displayed_color='rgb(0,0,0)',
+                        size=1,
+                        id=edge_id
+                    )
+                    edge_id += 1
+                # todo maybe set color, but affects performance
+        current_node_idx += 1
+        if len(active_nodes) > current_node_idx + 1:
+            current_node = active_nodes[current_node_idx]
     print("end")
 
+    return ret_graph
+
+
+# def has_next(array, idx):
+#     return len(array) > idx + 1
+
+
+def calculate_probability(current_age, age):
+    age_diff = abs(int(current_age) - int(age))
+    age_probability = (age_diff * 2) / 100
+    total_probability = age_probability + BASE_PROBABILITY
+    if total_probability > 0.98:
+        total_probability = 0.98
+    return total_probability
