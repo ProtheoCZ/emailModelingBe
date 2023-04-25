@@ -34,7 +34,7 @@ def get_coloring_process(request):  # POST
         # return JsonResponse(processor.process_graph())
         return JsonResponse(processor.process_graph_lnk())
     else:
-        return JsonResponse({"graphs": []})
+        return JsonResponse({"graphs": [], "compatible": 1})
 
 
 @csrf_exempt
@@ -48,7 +48,7 @@ def get_full_lnk_sim(request):
     if len(request.body.decode('utf-8')) > 0:
         processor = GraphProcessor(request.body.decode('utf-8'))
         processor.process_full_lnk()
-    return JsonResponse({"graphs": []})
+    return JsonResponse({"graphs": [], "compatible": 1})
 
 
 @csrf_exempt
@@ -58,5 +58,5 @@ def get_relatability_coloring(request):
         # processor = GraphProcessor(request.body.decode('utf-8'))
         # return JsonResponse(processor.process_relatability())
     else:
-        return JsonResponse({"graphs": []})
+        return JsonResponse({"graphs": [], "compatible": 1})
 

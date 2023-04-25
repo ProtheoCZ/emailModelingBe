@@ -126,7 +126,7 @@ class GraphProcessor:
         self.get_degree_distribution()  # todo consider to turn back on
         # get_fraction_of_nodes_with_one_child(ret_networkx[0]) #todo consider to turn back on
 
-        ret_json = {"graphs": []}
+        ret_json = {"graphs": [], "compatible": 1}
 
         for graph in ret_networkx:
             self.graph = graph
@@ -136,10 +136,10 @@ class GraphProcessor:
 
     def process_full_lnk(self):
         lnk = LnkAlg(self.graph, 0.65, 0.90, 0.20)
-        lnk.run_full_simulation(200, 10)
+        lnk.run_full_simulation(200, 1)
 
     def generate_gw_tree(self):
-        ret_json = {"graphs": []}
+        ret_json = {"graphs": [], "compatible": 1}
         self.graph = generate_tree()
         ret_json["graphs"].append(self.networkx_to_json())
 

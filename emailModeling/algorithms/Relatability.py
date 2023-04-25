@@ -7,11 +7,15 @@ BASE_PROBABILITY = 0.65  # probability denotes chance NOT to respond
 
 
 def simulate_relatability(graph_name):
+    ret_json = {"graphs": [], "compatible": 0}
     json_graph = json_loader(graph_name)
-    graph = json_to_nx(json_graph)
-    ret_graph = age_relatability(graph)
-    ret_json = {"graphs": []}
-    ret_json["graphs"].append(nx_to_json(ret_graph))
+
+    if isGraphCompatibleLite(json_graph):
+        graph = json_to_nx(json_graph)
+        ret_graph = age_relatability(graph)
+        ret_json["graphs"].append(nx_to_json(ret_graph))
+        ret_json["compatible"] = 1
+
     return ret_json
 
 
@@ -95,7 +99,7 @@ def age_relatability(graph):
         id=start_node_id,
         age=start_node['age'],
         gender=start_node['gender']
-        )
+    )
     active_nodes = [start_node_id]
     visited_nodes = [start_node_id]
 
@@ -153,3 +157,12 @@ def calculate_probability(current_age, age):
     if total_probability > 0.98:
         total_probability = 0.98
     return total_probability
+
+
+def isGraphCompatibleLite(graph):  # checks random node attrs needed by alg, implement function checking all nodes
+    try:
+        random.sample(graph['nodes'], 1)[0]['attributes']['gender']
+        random.sample(graph['nodes'], 1)[0]['attributes']['age']
+        return True
+    except KeyError:
+        return False

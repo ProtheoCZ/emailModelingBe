@@ -202,12 +202,14 @@ class LnkAlg:
     def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
         graph_len = self.graph.number_of_nodes()
         while True:
-            start_node = self.graph.nodes[str(random.randint(1, graph_len))]
-            neighbors = [n for n in self.graph.neighbors(start_node['id'])]
+            # start_node = self.graph.nodes[str(random.randint(1, graph_len))]
+            start_node_id = random.sample(self.graph.nodes, 1)[0]
+            neighbors = [n for n in self.graph.neighbors(start_node_id)]
             if len(neighbors) >= n:
-                return start_node
+                return self.graph.nodes[start_node_id]
 
     def run_alg(self):
+        # start_node = random.sample(self.graph.nodes, 1)
         # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
         start_node = self.get_hub_start(50)  # todo for testing with hubs
         # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
