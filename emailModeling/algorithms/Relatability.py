@@ -141,7 +141,6 @@ def age_relatability(graph):
         current_node_idx += 1
         if len(active_nodes) > current_node_idx + 1:
             current_node = active_nodes[current_node_idx]
-    print("end")
 
     return ret_graph
 
@@ -152,7 +151,7 @@ def age_relatability(graph):
 
 def calculate_probability(current_age, age):
     age_diff = abs(int(current_age) - int(age))
-    age_probability = (age_diff * 2) / 100
+    age_probability = age_diff / 100
     total_probability = age_probability + BASE_PROBABILITY
     if total_probability > 0.98:
         total_probability = 0.98

@@ -22,6 +22,31 @@ def get_fraction_of_nodes_with_one_child(graph):
         # return fraction
 
 
+def f(x, exponent):
+    return x ** exponent
+
+
+def get_expected_distribution():
+    x = sy.Symbol("x")
+
+    exponent = -2
+    integral_dict = {}
+
+    for i in range(3):
+        integral_dict["x^" + str(exponent - i)] = []
+        i_sum = 0
+        for j in range(10):
+            integral = sy.integrate(f(x, exponent-i), (x, 1+j, 2+j))
+            i_sum += integral
+            integral_dict["x^" + str(exponent-i)].append([1+j, 2+j, integral])
+
+        for k in range(10):
+            integral_dict["x^" + str(exponent-i)][k][2] = integral_dict["x^" + str(exponent-i)][k][2]/i_sum
+    df = pd.DataFrame(data=integral_dict)
+    pd.options.display.float_format = '${:,.2f}'.format
+    print(df)
+
+
 class GraphProcessor:
     def __init__(self, json_graph_name):
         self.graph = None
@@ -122,7 +147,7 @@ class GraphProcessor:
 
         lnk = LnkAlg(self.graph, 0.65, 0.90, 0.22)
         ret_networkx = lnk.run_alg()
-        self.get_expected_distribution()
+        get_expected_distribution()
         self.get_degree_distribution()  # todo consider to turn back on
         # get_fraction_of_nodes_with_one_child(ret_networkx[0]) #todo consider to turn back on
 
@@ -145,29 +170,6 @@ class GraphProcessor:
 
         return ret_json
 
-    def f(self, x, exponent):
-        return x ** exponent
-
-    def get_expected_distribution(self):
-        x = sy.Symbol("x")
-
-        exponent = -2
-        integral_dict = {}
-
-        for i in range(3):
-            integral_dict["x^" + str(exponent - i)] = []
-            i_sum = 0
-            for j in range(10):
-                integral = sy.integrate(self.f(x, exponent-i), (x, 1+j, 2+j))
-                i_sum += integral
-                integral_dict["x^" + str(exponent-i)].append([1+j, 2+j, integral])
-
-            for k in range(10):
-                integral_dict["x^" + str(exponent-i)][k][2] = integral_dict["x^" + str(exponent-i)][k][2]/i_sum
-        df = pd.DataFrame(data=integral_dict)
-        pd.options.display.float_format = '${:,.2f}'.format
-        print(df)
-
     def get_degree_distribution(self):
         if isinstance(self.graph, nx.Graph):
             number_of_nodes = self.graph.number_of_nodes()
@@ -184,5 +186,13 @@ class GraphProcessor:
                 degree_percentage = nodes_with_degree/number_of_nodes * 100
                 cumulative_percentage += degree_percentage
                 if nodes_with_degree > 0:
-                    print("degree " + str(i) + ": " + str(nodes_with_degree) + " nodes | chance " + str(degree_percentage) + "% "
-                          + "cumulative " + str(cumulative_percentage) + "%" + "\n")
+                    print("degree "
+                          + str(i) + ": "
+                          + str(nodes_with_degree)
+                          + " nodes | chance "
+                          + str(degree_percentage)
+                          + "% "
+                          + "cumulative "
+                          + str(cumulative_percentage)
+                          + "%"
+                          + "\n")

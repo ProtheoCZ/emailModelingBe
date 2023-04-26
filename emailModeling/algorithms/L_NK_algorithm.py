@@ -2,6 +2,8 @@ import random
 import sympy as sy
 import networkx as nx
 
+from ..utils import GraphTools as Gt
+
 
 class LnkAlg:
     def __init__(self, graph, discard_rate, back_rate, post_rate):
@@ -59,7 +61,9 @@ class LnkAlg:
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
             displayed_color = self.graph.nodes[node]['displayed_color']
-            if displayed_color == self.POST_COLOR or displayed_color == self.RESPONSE_COLOR or displayed_color == self.START_COLOR:
+            if displayed_color == self.POST_COLOR\
+                    or displayed_color == self.RESPONSE_COLOR\
+                    or displayed_color == self.START_COLOR:
                 node_to_add = self.graph.nodes[node]
                 ret_graph.add_node(
                     node_to_add['id'],
@@ -73,7 +77,9 @@ class LnkAlg:
         i = 1
         for node in ret_graph:
             for neighbor in ret_graph:
-                if self.graph.has_edge(node, neighbor) and node != neighbor and self.graph.get_edge_data(node, neighbor)['displayed_color'] == self.RESPONSE_EDGE_COLOR:
+                if self.graph.has_edge(node, neighbor)\
+                        and node != neighbor\
+                        and self.graph.get_edge_data(node, neighbor)['displayed_color'] == self.RESPONSE_EDGE_COLOR:
                     ret_graph.add_edge(
                         node,
                         neighbor,
@@ -96,13 +102,13 @@ class LnkAlg:
             if displayed_color == self.START_COLOR:
                 start_node = graph.nodes[node]
 
-        self.add_node_to_graph(ret_graph, start_node)
+        Gt.add_node_to_graph(ret_graph, start_node)
 
         edge_id = 0
         for i in range(len(post_nodes) - 1):
             shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i+1])
             for idx, node in enumerate(shortest_path):
-                self.add_node_to_graph(ret_graph, graph.nodes[node])
+                Gt.add_node_to_graph(ret_graph, graph.nodes[node])
                 if idx + 1 < len(shortest_path):
                     neighbor = shortest_path[idx+1]
                     ret_graph.add_edge(
@@ -118,64 +124,6 @@ class LnkAlg:
         # if is_tree:
         #     ret_graph = self.order_tree(ret_graph, start_node['id'])
         return ret_graph
-
-    def order_tree(self, tree, root):
-        if isinstance(tree, nx.Graph):
-            tree = tree.copy()
-            placed_nodes = []
-            nx.set_node_attributes(tree, {root: {'x': -1, 'y': -1, 'size': 5}})
-            placed_nodes.append(root)
-
-            previous_gen = [root]
-
-            y = 0
-            number_of_children = [0 for _ in range(10)]
-            while len(previous_gen) > 0:
-                x = 0
-                current_gen = []
-                for parent in previous_gen:
-                    current_root = parent
-                    children_count = 0
-                    for neighbor in tree.neighbors(current_root):
-                        if neighbor not in placed_nodes:
-                            current_gen.append(neighbor)
-                            children_count += 1
-
-                    if children_count > len(number_of_children) - 1:
-                        number_of_children[-1] += 1
-                    else:
-                        number_of_children[children_count] += 1
-
-                for node in current_gen:
-                    nx.set_node_attributes(tree, {node: {'x': x, 'y': y, 'size': 5}})
-                    placed_nodes.append(node)
-                    x += 1
-
-                y += 1
-                previous_gen = current_gen
-
-            self.get_children_stats(number_of_children)
-        return tree
-
-    def get_children_stats(self, number_of_children, log_to_file=False):
-        total = sum(number_of_children)
-        for idx, n in enumerate(number_of_children):
-            if log_to_file:
-                pass  # todo logging to file
-            else:
-                print(str(n) + ' out of ' + str(total) + ' nodes had ' + str(idx) + ' children')  # todo add percentage
-
-    def add_node_to_graph(self, graph, node):
-        if isinstance(graph, nx.Graph):
-            graph.add_node(
-                node['id'],
-                x=node['x'],
-                y=node['y'],
-                size=node['size'],
-                displayed_color=node['displayed_color'],
-                label=node['label'],
-                id=node['id']
-            )
 
     def get_avg_post_children(self, graph):
         if isinstance(graph, nx.Graph):
@@ -200,9 +148,7 @@ class LnkAlg:
                 print("nobody responded!")
 
     def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
-        graph_len = self.graph.number_of_nodes()
         while True:
-            # start_node = self.graph.nodes[str(random.randint(1, graph_len))]
             start_node_id = random.sample(self.graph.nodes, 1)[0]
             neighbors = [n for n in self.graph.neighbors(start_node_id)]
             if len(neighbors) >= n:
@@ -250,7 +196,7 @@ class LnkAlg:
                             is_already_active = False
 
                             for node_array in active_nodes:
-                                for active_node_pair in node_array:  # todo tohle je blbe po optimalizaci
+                                for active_node_pair in node_array:
                                     active_node = active_node_pair[1]
                                     if active_node == neighbor:
                                         is_already_active = True
@@ -274,8 +220,11 @@ class LnkAlg:
                 ret_tree = self.treeify(ret_graph)
                 ret_array.append(ret_tree)
                 if nx.is_tree(ret_tree):
-                    ordered_tree = self.order_tree(ret_tree, start_node['id'])
+                    ordered_tree = Gt.order_tree(ret_tree, start_node['id'])
                     ret_array.append(ordered_tree)
+
+                else:
+                    pass  # todo stats on non trees
 
         # for node in active_nodes:
         #     print(node)
@@ -298,9 +247,16 @@ class LnkAlg:
                     results = self.run_alg()
                     graph = results[1]  # todo check which graph you actually want
                     if results[0].number_of_nodes() >= critical_len:
-                        graph_name = self.START_FOLDER + "/graph_" + str(graph_number) + "_br_" + str(self.back_rate) + "_pr_" + str(self.post_rate) + ".gexf"
+                        graph_name = self.START_FOLDER\
+                                     + "/graph_" + str(graph_number)\
+                                     + "_br_" + str(self.back_rate)\
+                                     + "_pr_" + str(self.post_rate)\
+                                     + ".gexf"
                         nx.write_gexf(graph, graph_name, version="1.2draft")
-                        print("Graph run# " + str(run_number) + " exceeded critical length. Written as graph #" + str(graph_number))
+                        print("Graph run# "
+                              + str(run_number)
+                              + " exceeded critical length. Written as graph #"
+                              + str(graph_number))
                         graph_number += 1
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
