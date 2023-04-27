@@ -3,10 +3,12 @@ import sympy as sy
 import networkx as nx
 
 from ..utils import GraphTools as Gt
+from ..utils import StatsProvider as Sp
 
 
 class LnkAlg:
-    def __init__(self, graph, discard_rate, back_rate, post_rate):
+    def __init__(self, graph, graph_name, discard_rate, back_rate, post_rate):
+        self.start_node = None
         self.lower_bound = 0.05
         self.upper_bound = 0.1
         self.interval_increase = 0.1
@@ -15,6 +17,7 @@ class LnkAlg:
         self.values = []
         self.probabilities = []
         self.graph = nx.Graph  # remove this
+        self.graph_name = graph_name
         self.POST_COLOR = 'rgb(0,255,0)'
         self.RESPONSE_COLOR = 'rgb(0,0,255)'
         self.START_COLOR = 'rgb(242,245,66)'
@@ -154,25 +157,29 @@ class LnkAlg:
             if len(neighbors) >= n:
                 return self.graph.nodes[start_node_id]
 
-    def run_alg(self):
+    def run_alg(self, is_hub_start):
         # start_node = random.sample(self.graph.nodes, 1)
         # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-        start_node = self.get_hub_start(50)  # todo for testing with hubs
         # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
         # start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
         # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
         # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
         # start_node = self.graph.nodes['122']
 
+        if is_hub_start:
+            self.start_node = self.get_hub_start(50)  # todo for testing with hubs
+        else:
+            self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
+
         ret_array = []
 
         active_nodes = [[] for _ in range(self.ITERATION_COUNT)]
         responders = []
-        for node in self.graph.neighbors(start_node['id']):
+        for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
                 t = self.generate_t()
                 nx.set_node_attributes(self.graph, {node: t}, name="t")
-                active_nodes[t].append((start_node['id'], node))
+                active_nodes[t].append((self.start_node['id'], node))
 
         for i in range(self.ITERATION_COUNT):  # todo select better range
             for node_pair in active_nodes[i]:
@@ -210,7 +217,7 @@ class LnkAlg:
             # print(responders)
 
             # if i % 1 == 0:
-            self.graph.nodes[start_node['id']]['displayed_color'] = self.START_COLOR
+            self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
             if i == 1000:
                 # ret_array.append(self.graph)
                 ret_graph = self.getOnlyColoredNodes()
@@ -220,7 +227,7 @@ class LnkAlg:
                 ret_tree = self.treeify(ret_graph)
                 ret_array.append(ret_tree)
                 if nx.is_tree(ret_tree):
-                    ordered_tree = Gt.order_tree(ret_tree, start_node['id'])
+                    ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
                     ret_array.append(ordered_tree)
 
                 else:
@@ -231,7 +238,8 @@ class LnkAlg:
 
         return ret_array
 
-    def run_full_simulation(self, critical_len, n):
+    def run_full_simulation(self, critical_len, n, is_hub_start, export_results=False, export_stats=True):
+        sim_id = Sp.get_sim_id()
         # orig_back_rate = self.back_rate
         orig_post_rate = self.post_rate
         number_of_br_increases = round((1 - self.back_rate) * 100)
@@ -244,9 +252,9 @@ class LnkAlg:
             self.back_rate += 0.01
             for j in range(number_of_pr_increases):
                 for k in range(n):
-                    results = self.run_alg()
+                    results = self.run_alg(is_hub_start)
                     graph = results[1]  # todo check which graph you actually want
-                    if results[0].number_of_nodes() >= critical_len:
+                    if results[0].number_of_nodes() >= critical_len and export_results:
                         graph_name = self.START_FOLDER\
                                      + "/graph_" + str(graph_number)\
                                      + "_br_" + str(self.back_rate)\
@@ -258,6 +266,9 @@ class LnkAlg:
                               + " exceeded critical length. Written as graph #"
                               + str(graph_number))
                         graph_number += 1
+
+                    if export_stats:
+                        Sp.get_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number, sim_id)
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
                     self.graph = self.orig_graph.copy()

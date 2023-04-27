@@ -1,9 +1,7 @@
 import networkx as nx
 
-from . import StatsProvider as Sp
 
-
-def order_tree(tree, root):
+def order_tree(tree, root):  # todo clean children stats mess
     if isinstance(tree, nx.Graph):
         tree = tree.copy()
         placed_nodes = []
@@ -38,7 +36,7 @@ def order_tree(tree, root):
             y += 1
             previous_gen = current_gen
 
-        Sp.get_children_stats(number_of_children)
+        # Sp.get_children_stats(number_of_children)
     return tree
 
 

@@ -145,8 +145,8 @@ class GraphProcessor:
 
     def process_graph_lnk(self):
 
-        lnk = LnkAlg(self.graph, 0.65, 0.90, 0.22)
-        ret_networkx = lnk.run_alg()
+        lnk = LnkAlg(self.graph, self.json_graph_name, 0.65, 0.90, 0.22)
+        ret_networkx = lnk.run_alg(True)
         get_expected_distribution()
         self.get_degree_distribution()  # todo consider to turn back on
         # get_fraction_of_nodes_with_one_child(ret_networkx[0]) #todo consider to turn back on
@@ -160,8 +160,8 @@ class GraphProcessor:
         return ret_json
 
     def process_full_lnk(self):
-        lnk = LnkAlg(self.graph, 0.65, 0.90, 0.20)
-        lnk.run_full_simulation(200, 1)
+        lnk = LnkAlg(self.graph, self.json_graph_name, 0.65, 0.90, 0.20)
+        lnk.run_full_simulation(200, 1, True)
 
     def generate_gw_tree(self):
         ret_json = {"graphs": [], "compatible": 1}
