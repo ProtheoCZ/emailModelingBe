@@ -1,3 +1,4 @@
+import os
 import random
 import sympy as sy
 import networkx as nx
@@ -104,6 +105,7 @@ class LnkAlg:
                 post_nodes.append(node)
             if displayed_color == self.START_COLOR:
                 start_node = graph.nodes[node]
+                post_nodes.append(node)
 
         Gt.add_node_to_graph(ret_graph, start_node)
 
@@ -240,6 +242,8 @@ class LnkAlg:
 
     def run_full_simulation(self, critical_len, n, is_hub_start, export_results=False, export_stats=True):
         sim_id = Sp.get_sim_id()
+        if export_stats:
+            os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
         # orig_back_rate = self.back_rate
         orig_post_rate = self.post_rate
         number_of_br_increases = round((1 - self.back_rate) * 100)
@@ -268,9 +272,12 @@ class LnkAlg:
                         graph_number += 1
 
                     if export_stats:
+                        # Sp.get_tree_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number)
                         Sp.get_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number, sim_id)
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
                     self.graph = self.orig_graph.copy()
 
                 self.post_rate += 0.01
+        if export_stats:
+            Sp.get_summary_stats(sim_id)
