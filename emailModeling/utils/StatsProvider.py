@@ -7,30 +7,18 @@ RECORDED_CHILDREN_COUNT = 10
 FULL_SIM_DIR = 'fullSimStats'
 
 
-# def get_children_stats(number_of_children, log_to_file=False):
-#     total = sum(number_of_children)
-#     for idx, n in enumerate(number_of_children):
-#         if log_to_file:
-#             pass  # todo logging to file
-#         elif idx == len(number_of_children) - 1:
-#             print(str(n) + ' out of ' + str(total) + ' nodes had ' + str(idx) + '+ children')
-#         else:
-#             print(str(n) + ' out of ' + str(total) + ' nodes had ' + str(idx) + ' children')  # todo add percentage
-
-
 def get_children_stats(graph, root):
     visited_nodes = [root]
     node_queue = [root]
     children_count_arr = [0 for _ in range(RECORDED_CHILDREN_COUNT)]
-    depth = 0
     max_children = 0
+    current_parent = root
 
     while len(node_queue) > 0:
         current_parent = node_queue.pop(0)
         current_gen = [node for node in nx.neighbors(graph, current_parent) if node not in visited_nodes]
-        depth += 1  #todo fix this, gives node count
         children_count = len(current_gen)
-        max_children = max(children_count, children_count)
+        max_children = max(children_count, max_children)
         if children_count <= RECORDED_CHILDREN_COUNT:
             children_count_arr[children_count] += 1
         else:
@@ -39,6 +27,8 @@ def get_children_stats(graph, root):
         for node in current_gen:
             visited_nodes.append(node)
             node_queue.append(node)
+
+    depth = len(nx.dijkstra_path(graph, root, current_parent))
 
     children_keys = [str(i) for i in range(RECORDED_CHILDREN_COUNT-1)]
     children_keys.append(str(RECORDED_CHILDREN_COUNT - 1) + "+")
@@ -60,7 +50,14 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
         if is_tree:
             children_stats = get_children_stats(graph, root)
         else:
-            children_stats = {"triangles": nx.triangles(graph)}
+            triangles = nx.triangles(graph)
+            triangle_count = 0
+            for triangle in triangles:
+                triangle_count += triangle
+
+            triangle_count = triangle_count/3
+
+            children_stats = {"triangles": triangle_count}
 
         result_stats = {
             "original_graph_name": graph_name,
@@ -77,23 +74,35 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
 
 def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
     run_result = get_tree_stats(graph, root, graph_name, is_hub_start, run_id)
-    diff = 6 - len(str(run_id))
+    run_diff = 6 - len(str(run_id))
+    sim_diff = 3 - len(str(sim_id))
     run_number = str(run_id)
+    sim_number = str(sim_id)
 
-    for i in range(diff):
+    for i in range(run_diff):
         run_number = '0' + run_number
 
-    with open(FULL_SIM_DIR + '/Sim_' + str(sim_id) + '/Run_' + run_number + '.json', 'w') as json_file:
+    for i in range(sim_diff):
+        sim_number = '0' + sim_number
+
+    with open(FULL_SIM_DIR + '/Sim_' + sim_number + '/Run_' + run_number + '.json', 'w') as json_file:
         json.dump(run_result, json_file)
 
 
-def get_sim_id(): # todo fix this only works for 1 digit id
+def get_sim_id():
     previous_runs = [file for file in os.listdir(FULL_SIM_DIR)]
 
     if len(previous_runs) == 0:
-        sim_id = 0
+        sim_id = '000'
     else:
-        sim_id = int(previous_runs[-1][-1]) + 1
+        sim_id = str(int(previous_runs[-1][-3:]) + 1)
+        sim_diff = 3 - len(str(sim_id))
+        sim_number = str(sim_id)
+        for i in range(sim_diff):
+            sim_number = '0' + sim_number
+
+        sim_id = sim_number
+
     return sim_id
 
 
