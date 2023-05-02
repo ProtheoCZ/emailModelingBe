@@ -5,6 +5,9 @@ import json
 
 RECORDED_CHILDREN_COUNT = 10
 FULL_SIM_DIR = 'fullSimStats'
+POST_COLOR = 'rgb(0,255,0)'
+RESPONSE_COLOR = 'rgb(0,0,255)'
+START_COLOR = 'rgb(242,245,66)'
 
 
 def get_children_stats(graph, root):
@@ -30,7 +33,7 @@ def get_children_stats(graph, root):
 
     depth = len(nx.dijkstra_path(graph, root, current_parent))
 
-    children_keys = [str(i) for i in range(RECORDED_CHILDREN_COUNT-1)]
+    children_keys = [str(i) for i in range(RECORDED_CHILDREN_COUNT - 1)]
     children_keys.append(str(RECORDED_CHILDREN_COUNT - 1) + "+")
 
     children_dict = {children_keys[i]: children_count_arr[i] for i in range(len(children_keys))}
@@ -55,7 +58,7 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
             for triangle in triangles:
                 triangle_count += triangle
 
-            triangle_count = triangle_count/3
+            triangle_count = triangle_count / 3
 
             children_stats = {"triangles": triangle_count}
 
@@ -73,7 +76,8 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
 
 
 def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
-    run_result = get_tree_stats(graph, root, graph_name, is_hub_start, run_id)
+    run_tree_result = get_tree_stats(graph, root, graph_name, is_hub_start, run_id)
+    # run_result = get_result_stats() todo enable this
     run_diff = 6 - len(str(run_id))
     sim_diff = 3 - len(str(sim_id))
     run_number = str(run_id)
@@ -86,7 +90,34 @@ def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
         sim_number = '0' + sim_number
 
     with open(FULL_SIM_DIR + '/Sim_' + sim_number + '/Run_' + run_number + '.json', 'w') as json_file:
-        json.dump(run_result, json_file)
+        json.dump(run_tree_result, json_file)
+
+
+def get_result_stats(graph):
+    if isinstance(graph, nx.Graph):
+        node_count = graph.number_of_nodes()
+        post_nodes = 0
+        response_nodes = 0
+        hub_count = 0  # todo define hub properly through whole project
+        avg_neighbors = 0
+
+        for node in graph.nodes:
+            color = graph.nodes[node]['displayed_color']
+            if color == START_COLOR or color == POST_COLOR:
+                post_nodes += 1
+
+            if color == RESPONSE_COLOR:
+                response_nodes += 1
+
+        ret_dict = {
+            "node_count": node_count,
+            "post_nodes": post_nodes,
+            "response_nodes": response_nodes,
+            "hub_count": hub_count,
+            "avg_neighbors": avg_neighbors
+        }
+
+        return ret_dict
 
 
 def get_sim_id():
@@ -175,14 +206,14 @@ def get_avg_stats(sum_result):
     non_tree_count = sum_result["non-tree_count"]
 
     if tree_count > 0:
-        sum_result["avg_depth"] = sum_result["avg_depth"]/tree_count
-        sum_result["avg_max_children"] = sum_result["avg_max_children"]/tree_count
-        sum_result["avg_node_count"] = sum_result["avg_node_count"]/tree_count
+        sum_result["avg_depth"] = sum_result["avg_depth"] / tree_count
+        sum_result["avg_max_children"] = sum_result["avg_max_children"] / tree_count
+        sum_result["avg_node_count"] = sum_result["avg_node_count"] / tree_count
 
     for key in sum_result["avg_children_counts"]:
-        sum_result["avg_children_counts"][key] = sum_result["avg_children_counts"][key]/run_count
+        sum_result["avg_children_counts"][key] = sum_result["avg_children_counts"][key] / run_count
 
     if non_tree_count > 0:
-        sum_result["avg_triangles"] = sum_result["avg_triangles"]/non_tree_count
+        sum_result["avg_triangles"] = sum_result["avg_triangles"] / non_tree_count
 
     return sum_result
