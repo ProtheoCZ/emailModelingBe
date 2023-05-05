@@ -38,9 +38,11 @@ def get_children_stats(graph, root):
 
     children_dict = {children_keys[i]: children_count_arr[i] for i in range(len(children_keys))}
     result_stats = {
-        "children_counts": children_dict,
-        "depth": depth,
-        "max_children": max_children
+        "tree_result_stats": {
+            "children_counts": children_dict,
+            "depth": depth,
+            "max_children": max_children
+        }
     }
 
     return result_stats
@@ -60,24 +62,33 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
 
             triangle_count = triangle_count / 3
 
-            children_stats = {"triangles": triangle_count}
+            children_stats = {
+                "tree_result_stats": {
+                    "triangles": triangle_count
+                }
+            }
 
         result_stats = {
-            "original_graph_name": graph_name,
-            "run_id": run_id,
-            "is_tree": int(is_tree),
-            "node_count": node_count,
-            "is_hub_start": int(is_hub_start),
+            "tree_result_stats": {
+                "is_tree": int(is_tree),
+                "node_count": node_count,
+                "is_hub_start": int(is_hub_start)
+            },
         }
 
-        result_stats = {**result_stats, **children_stats}
+        result_stats["tree_result_stats"] = {**result_stats["tree_result_stats"], **children_stats["tree_result_stats"]}
 
-        return result_stats
+        return result_stats # todo fix merging dicts
 
 
 def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
+    metadata = {
+        "original_graph_name": graph_name,
+        "run_id": run_id
+    }
     run_tree_result = get_tree_stats(graph, root, graph_name, is_hub_start, run_id)
-    # run_result = get_result_stats() todo enable this
+    graph_stats = get_graph_stats(graph)
+    run_result = {**metadata, **run_tree_result, **graph_stats}
     run_diff = 6 - len(str(run_id))
     sim_diff = 3 - len(str(sim_id))
     run_number = str(run_id)
@@ -90,10 +101,10 @@ def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
         sim_number = '0' + sim_number
 
     with open(FULL_SIM_DIR + '/Sim_' + sim_number + '/Run_' + run_number + '.json', 'w') as json_file:
-        json.dump(run_tree_result, json_file)
+        json.dump(run_result, json_file)
 
 
-def get_result_stats(graph):
+def get_graph_stats(graph):
     if isinstance(graph, nx.Graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0
@@ -103,18 +114,25 @@ def get_result_stats(graph):
 
         for node in graph.nodes:
             color = graph.nodes[node]['displayed_color']
+
+            avg_neighbors += len([neighbor for neighbor in graph.neighbors(node)])
+
             if color == START_COLOR or color == POST_COLOR:
                 post_nodes += 1
 
             if color == RESPONSE_COLOR:
                 response_nodes += 1
 
+        avg_neighbors = avg_neighbors/node_count
+
         ret_dict = {
-            "node_count": node_count,
-            "post_nodes": post_nodes,
-            "response_nodes": response_nodes,
-            "hub_count": hub_count,
-            "avg_neighbors": avg_neighbors
+            "full_graph_stats": {
+                "node_count": node_count,
+                "post_nodes": post_nodes,
+                "response_nodes": response_nodes,
+                "hub_count": hub_count,
+                "avg_neighbors": avg_neighbors
+            }
         }
 
         return ret_dict
@@ -140,7 +158,7 @@ def get_sim_id():
 def get_summary_stats(sim_id):
     path = FULL_SIM_DIR + '/Sim_' + str(sim_id) + '/'
     with open(path + '/Run_000001.json', 'r') as file:
-        first_run = json.load(file)
+        first_run = json.load(file)["tree_result_stats"]
         static_result = {
             "original_graph_name": first_run["original_graph_name"],
             "is_hub_start": first_run["is_hub_start"],
@@ -163,7 +181,7 @@ def get_summary_stats(sim_id):
 
     for filename in os.listdir(path):
         with open(path + filename, 'r') as file:
-            run = json.load(file)
+            run = json.load(file)["tree_result_stats"]
             sum_result["run_count"] += 1
             if run["is_tree"] == 1:
                 sum_result["avg_depth"] += run["depth"]
