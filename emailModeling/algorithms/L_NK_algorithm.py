@@ -23,7 +23,7 @@ class LnkAlg:
         self.RESPONSE_COLOR = 'rgb(0,0,255)'
         self.START_COLOR = 'rgb(242,245,66)'
         self.RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
-        self.START_FOLDER = 'fullSimData6'
+        self.START_FOLDER = 'fullSimData'
         self.ITERATION_COUNT = 1001
 
         if isinstance(graph, nx.Graph):
@@ -65,8 +65,8 @@ class LnkAlg:
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
             displayed_color = self.graph.nodes[node]['displayed_color']
-            if displayed_color == self.POST_COLOR\
-                    or displayed_color == self.RESPONSE_COLOR\
+            if displayed_color == self.POST_COLOR \
+                    or displayed_color == self.RESPONSE_COLOR \
                     or displayed_color == self.START_COLOR:
                 node_to_add = self.graph.nodes[node]
                 ret_graph.add_node(
@@ -81,8 +81,8 @@ class LnkAlg:
         i = 1
         for node in ret_graph:
             for neighbor in ret_graph:
-                if self.graph.has_edge(node, neighbor)\
-                        and node != neighbor\
+                if self.graph.has_edge(node, neighbor) \
+                        and node != neighbor \
                         and self.graph.get_edge_data(node, neighbor)['displayed_color'] == self.RESPONSE_EDGE_COLOR:
                     ret_graph.add_edge(
                         node,
@@ -111,11 +111,11 @@ class LnkAlg:
 
         edge_id = 0
         for i in range(len(post_nodes) - 1):
-            shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i+1])
+            shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i + 1])
             for idx, node in enumerate(shortest_path):
                 Gt.add_node_to_graph(ret_graph, graph.nodes[node])
                 if idx + 1 < len(shortest_path):
-                    neighbor = shortest_path[idx+1]
+                    neighbor = shortest_path[idx + 1]
                     ret_graph.add_edge(
                         node,
                         neighbor,
@@ -237,7 +237,7 @@ class LnkAlg:
         number_of_pr_increases = round((0.35 - self.post_rate) * 100)
         graph_number = 1
         run_number = 1
-        number_of_runs = n*number_of_pr_increases*number_of_br_increases
+        number_of_runs = n * number_of_pr_increases * number_of_br_increases
         for i in range(number_of_br_increases):
             self.post_rate = orig_post_rate
             self.back_rate += 0.01
@@ -246,10 +246,11 @@ class LnkAlg:
                     results = self.run_alg(is_hub_start)
                     tree = results[1]
                     if results[0].number_of_nodes() >= critical_len and export_results:
-                        graph_name = self.START_FOLDER\
-                                     + "/graph_" + str(graph_number)\
-                                     + "_br_" + str(self.back_rate)\
-                                     + "_pr_" + str(self.post_rate)\
+                        graph_name = self.START_FOLDER \
+                                     + "/sim_" + str(sim_id) + "_" \
+                                     + "graph_" + str(graph_number) \
+                                     + "_br_" + str(self.back_rate) \
+                                     + "_pr_" + str(self.post_rate) \
                                      + ".gexf"
                         nx.write_gexf(tree, graph_name, version="1.2draft")
                         print("Graph run# "

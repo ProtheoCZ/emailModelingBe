@@ -59,7 +59,7 @@ def get_tree_stats(graph, root, is_hub_start):
             triangles = nx.triangles(graph)
             triangle_count = 0
             for triangle in triangles:
-                triangle_count += triangle
+                triangle_count += triangles[triangle]
 
             triangle_count = triangle_count / 3
 
