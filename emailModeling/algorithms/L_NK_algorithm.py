@@ -232,9 +232,6 @@ class LnkAlg:
                     ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
                     ret_array.append(ordered_tree)
 
-                else:
-                    pass  # todo stats on non trees
-
         # for node in active_nodes:
         #     print(node)
 
@@ -257,14 +254,14 @@ class LnkAlg:
             for j in range(number_of_pr_increases):
                 for k in range(n):
                     results = self.run_alg(is_hub_start)
-                    graph = results[1]  # todo check which graph you actually want
+                    tree = results[1]  # todo check which graph you actually want
                     if results[0].number_of_nodes() >= critical_len and export_results:
                         graph_name = self.START_FOLDER\
                                      + "/graph_" + str(graph_number)\
                                      + "_br_" + str(self.back_rate)\
                                      + "_pr_" + str(self.post_rate)\
                                      + ".gexf"
-                        nx.write_gexf(graph, graph_name, version="1.2draft")
+                        nx.write_gexf(tree, graph_name, version="1.2draft")
                         print("Graph run# "
                               + str(run_number)
                               + " exceeded critical length. Written as graph #"
@@ -272,8 +269,9 @@ class LnkAlg:
                         graph_number += 1
 
                     if export_stats:
+                        graph = results[0]
                         # Sp.get_tree_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number)
-                        Sp.get_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number, sim_id)
+                        Sp.get_stats(tree, self.start_node['id'], self.graph_name, is_hub_start, run_number, sim_id) #todo add stats on original graph before treeify
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
                     self.graph = self.orig_graph.copy()
