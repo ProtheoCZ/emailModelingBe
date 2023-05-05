@@ -1,7 +1,10 @@
 import networkx as nx
 
 
-def order_tree(tree, root):  # todo clean children stats mess
+HUB_THRESHOLD = 50
+
+
+def order_tree(tree, root):
     if isinstance(tree, nx.Graph):
         tree = tree.copy()
         placed_nodes = []
@@ -11,22 +14,14 @@ def order_tree(tree, root):  # todo clean children stats mess
         previous_gen = [root]
 
         y = 0
-        number_of_children = [0 for _ in range(10)]
         while len(previous_gen) > 0:
             x = 0
             current_gen = []
             for parent in previous_gen:
                 current_root = parent
-                children_count = 0
                 for neighbor in tree.neighbors(current_root):
                     if neighbor not in placed_nodes:
                         current_gen.append(neighbor)
-                        children_count += 1
-
-                if children_count > len(number_of_children) - 1:
-                    number_of_children[-1] += 1
-                else:
-                    number_of_children[children_count] += 1
 
             for node in current_gen:
                 nx.set_node_attributes(tree, {node: {'x': x, 'y': y, 'size': 5}})
@@ -35,8 +30,6 @@ def order_tree(tree, root):  # todo clean children stats mess
 
             y += 1
             previous_gen = current_gen
-
-        # Sp.get_children_stats(number_of_children)
     return tree
 
 

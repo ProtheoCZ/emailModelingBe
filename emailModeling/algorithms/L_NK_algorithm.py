@@ -169,7 +169,7 @@ class LnkAlg:
         # start_node = self.graph.nodes['122']
 
         if is_hub_start:
-            self.start_node = self.get_hub_start(50)  # todo for testing with hubs
+            self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
         else:
             self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 
@@ -215,15 +215,9 @@ class LnkAlg:
                                 t = self.generate_t()
                                 nx.set_node_attributes(self.graph, {neighbor: t + i}, name="t")
                                 active_nodes[t].append((receiver, neighbor))
-            # print("responders len is " + str(len(responders)) + " and i is " + str(i))
-            # print(responders)
-
-            # if i % 1 == 0:
             self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
             if i == 1000:
-                # ret_array.append(self.graph)
                 ret_graph = self.getOnlyColoredNodes()
-                # self.get_avg_post_children(ret_graph)
                 ret_array.append(ret_graph)
 
                 ret_tree = self.treeify(ret_graph)
@@ -232,16 +226,12 @@ class LnkAlg:
                     ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
                     ret_array.append(ordered_tree)
 
-        # for node in active_nodes:
-        #     print(node)
-
         return ret_array
 
     def run_full_simulation(self, critical_len, n, is_hub_start, export_results=False, export_stats=True):
         sim_id = Sp.get_sim_id()
         if export_stats:
             os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
-        # orig_back_rate = self.back_rate
         orig_post_rate = self.post_rate
         number_of_br_increases = round((1 - self.back_rate) * 100)
         number_of_pr_increases = round((0.35 - self.post_rate) * 100)
@@ -254,7 +244,7 @@ class LnkAlg:
             for j in range(number_of_pr_increases):
                 for k in range(n):
                     results = self.run_alg(is_hub_start)
-                    tree = results[1]  # todo check which graph you actually want
+                    tree = results[1]
                     if results[0].number_of_nodes() >= critical_len and export_results:
                         graph_name = self.START_FOLDER\
                                      + "/graph_" + str(graph_number)\
@@ -270,8 +260,15 @@ class LnkAlg:
 
                     if export_stats:
                         graph = results[0]
-                        # Sp.get_tree_stats(graph, self.start_node['id'], self.graph_name, is_hub_start, run_number)
-                        Sp.get_stats(tree, self.start_node['id'], self.graph_name, is_hub_start, run_number, sim_id) #todo add stats on original graph before treeify
+                        Sp.get_stats(tree,
+                                     self.start_node['id'],
+                                     self.graph_name,
+                                     is_hub_start,
+                                     run_number,
+                                     sim_id,
+                                     graph
+                                     )
+
                     print("run #" + str(run_number) + " of " + str(number_of_runs))
                     run_number += 1
                     self.graph = self.orig_graph.copy()

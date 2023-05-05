@@ -2,6 +2,7 @@ import os
 
 import networkx as nx
 import json
+from ..utils import GraphTools as Gt
 
 RECORDED_CHILDREN_COUNT = 10
 FULL_SIM_DIR = 'fullSimStats'
@@ -48,7 +49,7 @@ def get_children_stats(graph, root):
     return result_stats
 
 
-def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
+def get_tree_stats(graph, root, is_hub_start):
     if isinstance(graph, nx.Graph):
         is_tree = nx.is_tree(graph)
         node_count = nx.number_of_nodes(graph)
@@ -78,15 +79,15 @@ def get_tree_stats(graph, root, graph_name, is_hub_start, run_id):
 
         result_stats["tree_result_stats"] = {**result_stats["tree_result_stats"], **children_stats["tree_result_stats"]}
 
-        return result_stats # todo fix merging dicts
+        return result_stats
 
 
-def get_stats(graph, root, graph_name, is_hub_start, run_id, sim_id):
+def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph):
     metadata = {
         "original_graph_name": graph_name,
         "run_id": run_id
     }
-    run_tree_result = get_tree_stats(graph, root, graph_name, is_hub_start, run_id)
+    run_tree_result = get_tree_stats(tree, root, is_hub_start)
     graph_stats = get_graph_stats(graph)
     run_result = {**metadata, **run_tree_result, **graph_stats}
     run_diff = 6 - len(str(run_id))
@@ -109,13 +110,17 @@ def get_graph_stats(graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0
         response_nodes = 0
-        hub_count = 0  # todo define hub properly through whole project
+        hub_count = 0
         avg_neighbors = 0
 
         for node in graph.nodes:
             color = graph.nodes[node]['displayed_color']
+            neighbors_len = len([neighbor for neighbor in graph.neighbors(node)])
 
-            avg_neighbors += len([neighbor for neighbor in graph.neighbors(node)])
+            if neighbors_len >= Gt.HUB_THRESHOLD:
+                hub_count += 1
+
+            avg_neighbors += neighbors_len
 
             if color == START_COLOR or color == POST_COLOR:
                 post_nodes += 1
@@ -123,7 +128,7 @@ def get_graph_stats(graph):
             if color == RESPONSE_COLOR:
                 response_nodes += 1
 
-        avg_neighbors = avg_neighbors/node_count
+        avg_neighbors = avg_neighbors / node_count
 
         ret_dict = {
             "full_graph_stats": {
@@ -158,16 +163,17 @@ def get_sim_id():
 def get_summary_stats(sim_id):
     path = FULL_SIM_DIR + '/Sim_' + str(sim_id) + '/'
     with open(path + '/Run_000001.json', 'r') as file:
-        first_run = json.load(file)["tree_result_stats"]
+        loaded_json = json.load(file)
+        first_run = loaded_json["tree_result_stats"]
         static_result = {
-            "original_graph_name": first_run["original_graph_name"],
+            "original_graph_name": loaded_json["original_graph_name"],
             "is_hub_start": first_run["is_hub_start"],
         }
 
     children_keys = [str(i) for i in range(RECORDED_CHILDREN_COUNT - 1)]
     children_keys.append(str(RECORDED_CHILDREN_COUNT - 1) + "+")
 
-    sum_result = {
+    sum_tree_result = {
         "run_count": 0,
         "tree_count": 0,
         "avg_children_counts": get_children_count_empty_dict(),
@@ -179,34 +185,62 @@ def get_summary_stats(sim_id):
         "avg_max_children": 0
     }
 
+    sum_graph_result = {
+        "run_count": 0,
+        "avg_node_count": 0,
+        "avg_post_nodes": 0,
+        "avg_response_nodes": 0,
+        "avg_hub_count": 0,
+        "avg_neighbors": 0
+    }
+
     for filename in os.listdir(path):
         with open(path + filename, 'r') as file:
-            run = json.load(file)["tree_result_stats"]
-            sum_result["run_count"] += 1
-            if run["is_tree"] == 1:
-                sum_result["avg_depth"] += run["depth"]
-                sum_result["avg_max_children"] += run["max_children"]
-                for key in run["children_counts"]:
-                    sum_result["avg_children_counts"][key] += run["children_counts"][key]
+            file_json = json.load(file)
+            tree_run = file_json["tree_result_stats"]
+            graph_run = file_json["full_graph_stats"]
+
+            # tree stats
+            sum_tree_result["run_count"] += 1
+            if tree_run["is_tree"] == 1:
+                sum_tree_result["avg_depth"] += tree_run["depth"]
+                sum_tree_result["avg_max_children"] += tree_run["max_children"]
+                for key in tree_run["children_counts"]:
+                    sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
             else:
-                sum_result["avg_triangles"] += run["triangles"]
+                sum_tree_result["avg_triangles"] += tree_run["triangles"]
 
-            sum_result["avg_node_count"] += run["node_count"]
+            sum_tree_result["avg_node_count"] += tree_run["node_count"]
 
-            if run["is_tree"] == 1:
-                sum_result["tree_count"] += 1
+            if tree_run["is_tree"] == 1:
+                sum_tree_result["tree_count"] += 1
             else:
-                sum_result["non-tree_count"] += 1
+                sum_tree_result["non-tree_count"] += 1
 
-            for key in run["children_counts"]:
-                sum_result["avg_children_counts"][key] += run["children_counts"][key]
+            for key in tree_run["children_counts"]:
+                sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
-    sum_result = get_avg_stats(sum_result)
-    sum_result = {**static_result, **sum_result}
+            # graph stats
+
+            sum_graph_result["run_count"] += 1
+            sum_graph_result["avg_node_count"] += graph_run["node_count"]
+            sum_graph_result["avg_post_nodes"] += graph_run["post_nodes"]
+            sum_graph_result["avg_response_nodes"] += graph_run["response_nodes"]
+            sum_graph_result["avg_hub_count"] += graph_run["hub_count"]
+            sum_graph_result["avg_neighbors"] += graph_run["avg_neighbors"]
+
+    sum_graph_result = get_avg_graph_stats(sum_graph_result)
+    sum_tree_result = get_avg_tree_stats(sum_tree_result)
+
+    result = {
+        **static_result,
+        "summary_tree_stats": sum_tree_result,
+        "summary_graph_stats": sum_graph_result
+    }
 
     with open(path + 'Summary.json', 'w') as summary:
-        json.dump(sum_result, summary)
+        json.dump(result, summary)
 
 
 def get_children_count_empty_dict():
@@ -218,7 +252,18 @@ def get_children_count_empty_dict():
     return children_dict
 
 
-def get_avg_stats(sum_result):
+def get_avg_graph_stats(sum_graph_result):
+    run_count = sum_graph_result["run_count"]
+    sum_graph_result["avg_node_count"] = sum_graph_result["avg_node_count"] / run_count
+    sum_graph_result["avg_post_nodes"] = sum_graph_result["avg_post_nodes"] / run_count
+    sum_graph_result["avg_response_nodes"] = sum_graph_result["avg_response_nodes"] / run_count
+    sum_graph_result["avg_hub_count"] = sum_graph_result["avg_hub_count"] / run_count
+    sum_graph_result["avg_neighbors"] = sum_graph_result["avg_neighbors"] / run_count
+
+    return sum_graph_result
+
+
+def get_avg_tree_stats(sum_result):
     run_count = sum_result["run_count"]
     tree_count = sum_result["tree_count"]
     non_tree_count = sum_result["non-tree_count"]

@@ -86,7 +86,6 @@ def nx_to_json(graph):
 
 def age_relatability(graph):
     ret_graph = nx.Graph()
-    # start_node = graph.nodes[str(random.randint(1, graph.number_of_nodes()))]
     start_node_id = random.sample(graph.nodes, 1)[0]
     start_node = graph.nodes[start_node_id]
     ret_graph.add_node(
@@ -145,10 +144,6 @@ def age_relatability(graph):
     return ret_graph
 
 
-# def has_next(array, idx):
-#     return len(array) > idx + 1
-
-
 def calculate_probability(current_age, age):
     age_diff = abs(int(current_age) - int(age))
     age_probability = age_diff / 100
@@ -158,7 +153,8 @@ def calculate_probability(current_age, age):
     return total_probability
 
 
-def isGraphCompatibleLite(graph):  # checks random node attrs needed by alg, implement function checking all nodes
+# checks random node attrs needed by alg, maybe implement function checking all nodes
+def isGraphCompatibleLite(graph):
     try:
         random.sample(graph['nodes'], 1)[0]['attributes']['gender']
         random.sample(graph['nodes'], 1)[0]['attributes']['age']
