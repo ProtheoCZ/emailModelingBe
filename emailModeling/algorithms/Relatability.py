@@ -1,5 +1,6 @@
 import json
 import random
+from ..utils import GraphTools as Gt
 
 import networkx as nx
 
@@ -12,7 +13,7 @@ def simulate_relatability(graph_name):
 
     if isGraphCompatibleLite(json_graph):
         graph = json_to_nx(json_graph)
-        ret_graph = age_relatability(graph)
+        ret_graph = age_relatability(graph, True)
         ret_json["graphs"].append(nx_to_json(ret_graph))
         ret_json["compatible"] = 1
 
@@ -84,9 +85,13 @@ def nx_to_json(graph):
     return ret_json
 
 
-def age_relatability(graph):
+def age_relatability(graph, is_hub_start: bool):
     ret_graph = nx.Graph()
-    start_node_id = random.sample(graph.nodes, 1)[0]
+    if is_hub_start:
+        start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+    else:
+        start_node_id = random.sample(graph.nodes, 1)[0]
+
     start_node = graph.nodes[start_node_id]
     ret_graph.add_node(
         start_node_id,

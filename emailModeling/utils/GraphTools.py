@@ -1,7 +1,17 @@
+import random
+
 import networkx as nx
 
 
 HUB_THRESHOLD = 50
+
+
+def get_hub_start(graph, n):  # n is the number of neighbors needed to be considered a hub
+    while True:
+        start_node_id = random.sample(graph.nodes, 1)[0]
+        neighbors = [n for n in graph.neighbors(start_node_id)]
+        if len(neighbors) >= n:
+            return start_node_id
 
 
 def order_tree(tree, root):

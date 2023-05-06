@@ -218,8 +218,8 @@ def get_summary_stats(sim_id):
             else:
                 sum_tree_result["non-tree_count"] += 1
 
-            for key in tree_run["children_counts"]:
-                sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
+            # for key in tree_run["children_counts"]:
+            #     sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
             # graph stats
 

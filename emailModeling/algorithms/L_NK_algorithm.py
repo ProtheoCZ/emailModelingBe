@@ -152,12 +152,12 @@ class LnkAlg:
             else:
                 print("nobody responded!")
 
-    def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
-        while True:
-            start_node_id = random.sample(self.graph.nodes, 1)[0]
-            neighbors = [n for n in self.graph.neighbors(start_node_id)]
-            if len(neighbors) >= n:
-                return self.graph.nodes[start_node_id]
+    # def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
+    #     while True:
+    #         start_node_id = random.sample(self.graph.nodes, 1)[0]
+    #         neighbors = [n for n in self.graph.neighbors(start_node_id)]
+    #         if len(neighbors) >= n:
+    #             return self.graph.nodes[start_node_id]
 
     def run_alg(self, is_hub_start):
         # start_node = random.sample(self.graph.nodes, 1)
@@ -169,7 +169,8 @@ class LnkAlg:
         # start_node = self.graph.nodes['122']
 
         if is_hub_start:
-            self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
+            # self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
+            self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
         else:
             self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 
@@ -228,13 +229,13 @@ class LnkAlg:
 
         return ret_array
 
-    def run_full_simulation(self, critical_len, n, is_hub_start, export_results=False, export_stats=True):
+    def run_full_simulation(self, critical_len, n, is_hub_start: bool, max_back_rate, max_post_rate, export_results=False, export_stats=True):
         sim_id = Sp.get_sim_id()
         if export_stats:
             os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
         orig_post_rate = self.post_rate
-        number_of_br_increases = round((1 - self.back_rate) * 100)
-        number_of_pr_increases = round((0.35 - self.post_rate) * 100)
+        number_of_br_increases = round((max_back_rate - self.back_rate) * 100)
+        number_of_pr_increases = round((max_post_rate - self.post_rate) * 100)
         graph_number = 1
         run_number = 1
         number_of_runs = n * number_of_pr_increases * number_of_br_increases
