@@ -23,7 +23,7 @@ def get_children_stats(graph, root):
         current_gen = [node for node in nx.neighbors(graph, current_parent) if node not in visited_nodes]
         children_count = len(current_gen)
         max_children = max(children_count, max_children)
-        if children_count <= RECORDED_CHILDREN_COUNT:
+        if children_count < RECORDED_CHILDREN_COUNT:
             children_count_arr[children_count] += 1
         else:
             children_count_arr[-1] += 1

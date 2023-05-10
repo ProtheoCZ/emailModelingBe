@@ -160,8 +160,8 @@ class GraphProcessor:
         return ret_json
 
     def process_full_lnk(self):
-        lnk = LnkAlg(self.graph, self.json_graph_name, 0.65, 0.90, 0.20)
-        lnk.run_full_simulation(1000, 1000, False, 0.93, 0.22, True)
+        lnk = LnkAlg(self.graph, self.json_graph_name, 0.65, 0.85, 0.21)
+        lnk.run_full_simulation(1000, 1000, True, 0.88, 0.22, True)
 
     def generate_gw_tree(self):
         ret_json = {"graphs": [], "compatible": 1}

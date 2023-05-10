@@ -19,10 +19,6 @@ class LnkAlg:
         self.probabilities = []
         self.graph = nx.Graph  # remove this
         self.graph_name = graph_name
-        self.POST_COLOR = 'rgb(0,255,0)'
-        self.RESPONSE_COLOR = 'rgb(0,0,255)'
-        self.START_COLOR = 'rgb(242,245,66)'
-        self.RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
         self.START_FOLDER = 'fullSimData'
         self.ITERATION_COUNT = 1001
 
@@ -65,9 +61,9 @@ class LnkAlg:
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
             displayed_color = self.graph.nodes[node]['displayed_color']
-            if displayed_color == self.POST_COLOR \
-                    or displayed_color == self.RESPONSE_COLOR \
-                    or displayed_color == self.START_COLOR:
+            if displayed_color == Gt.POST_COLOR \
+                    or displayed_color == Gt.RESPONSE_COLOR \
+                    or displayed_color == Gt.START_COLOR:
                 node_to_add = self.graph.nodes[node]
                 ret_graph.add_node(
                     node_to_add['id'],
@@ -83,11 +79,11 @@ class LnkAlg:
             for neighbor in ret_graph:
                 if self.graph.has_edge(node, neighbor) \
                         and node != neighbor \
-                        and self.graph.get_edge_data(node, neighbor)['displayed_color'] == self.RESPONSE_EDGE_COLOR:
+                        and self.graph.get_edge_data(node, neighbor)['displayed_color'] == Gt.RESPONSE_EDGE_COLOR:
                     ret_graph.add_edge(
                         node,
                         neighbor,
-                        displayed_color=self.RESPONSE_EDGE_COLOR,
+                        displayed_color=Gt.RESPONSE_EDGE_COLOR,
                         size=1,
                         id=i
                     )
@@ -95,50 +91,15 @@ class LnkAlg:
 
         return ret_graph
 
-    def treeify(self, graph):
-        ret_graph = nx.Graph()
-        start_node = None
-        post_nodes = []
-        for node in graph.nodes:
-            displayed_color = graph.nodes[node]['displayed_color']
-            if displayed_color == self.POST_COLOR:
-                post_nodes.append(node)
-            if displayed_color == self.START_COLOR:
-                start_node = graph.nodes[node]
-                post_nodes.append(node)
-
-        Gt.add_node_to_graph(ret_graph, start_node)
-
-        edge_id = 0
-        for i in range(len(post_nodes) - 1):
-            shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i + 1])
-            for idx, node in enumerate(shortest_path):
-                Gt.add_node_to_graph(ret_graph, graph.nodes[node])
-                if idx + 1 < len(shortest_path):
-                    neighbor = shortest_path[idx + 1]
-                    ret_graph.add_edge(
-                        node,
-                        neighbor,
-                        displayed_color=self.RESPONSE_EDGE_COLOR,
-                        size=1,
-                        id=edge_id
-                    )
-                    edge_id += 1
-        is_tree = nx.is_tree(ret_graph)
-        print("is_tree = " + str(is_tree))
-        # if is_tree:
-        #     ret_graph = self.order_tree(ret_graph, start_node['id'])
-        return ret_graph
-
     def get_avg_post_children(self, graph):
         if isinstance(graph, nx.Graph):
             val_arr = []
             for node in graph.nodes:
-                if graph.nodes[node]['displayed_color'] == self.POST_COLOR:
+                if graph.nodes[node]['displayed_color'] == Gt.POST_COLOR:
                     neighbors = [n for n in graph.neighbors(node)]
                     number_of_posting_neighbors = 0
                     for neighbor in neighbors:
-                        if graph.nodes[neighbor]['displayed_color'] == self.POST_COLOR:
+                        if graph.nodes[neighbor]['displayed_color'] == Gt.POST_COLOR:
                             number_of_posting_neighbors += 1
                     val_arr.append(number_of_posting_neighbors)
 
@@ -189,15 +150,15 @@ class LnkAlg:
                 receiver = node_pair[1]
                 sender = node_pair[0]
 
-                attrs = {(sender, receiver): {'displayed_color': self.RESPONSE_EDGE_COLOR}}
+                attrs = {(sender, receiver): {'displayed_color': Gt.RESPONSE_EDGE_COLOR}}
                 if random.random() - self.back_rate >= 0:
                     if random.random() <= self.post_rate:
-                        self.graph.nodes[receiver]['displayed_color'] = self.POST_COLOR
+                        self.graph.nodes[receiver]['displayed_color'] = Gt.POST_COLOR
                         responders.append(receiver)
                         nx.set_edge_attributes(self.graph, attrs)
 
                     else:
-                        self.graph.nodes[receiver]['displayed_color'] = self.RESPONSE_COLOR
+                        self.graph.nodes[receiver]['displayed_color'] = Gt.RESPONSE_COLOR
                         responders.append(receiver)
                         nx.set_edge_attributes(self.graph, attrs)
 
@@ -216,12 +177,12 @@ class LnkAlg:
                                 t = self.generate_t()
                                 nx.set_node_attributes(self.graph, {neighbor: t + i}, name="t")
                                 active_nodes[t].append((receiver, neighbor))
-            self.graph.nodes[self.start_node['id']]['displayed_color'] = self.START_COLOR
+            self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
             if i == 1000:
                 ret_graph = self.getOnlyColoredNodes()
                 ret_array.append(ret_graph)
 
-                ret_tree = self.treeify(ret_graph)
+                ret_tree = Gt.treeify(ret_graph)
                 ret_array.append(ret_tree)
                 if nx.is_tree(ret_tree):
                     ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
@@ -229,7 +190,7 @@ class LnkAlg:
 
         return ret_array
 
-    def run_full_simulation(self, critical_len, n, is_hub_start: bool, max_back_rate, max_post_rate, export_results=False, export_stats=True):
+    def run_full_simulation(self, crit_len, n, is_hub_start: bool, max_back_rate, max_post_rate, export_results=False, export_stats=True):
         sim_id = Sp.get_sim_id()
         if export_stats:
             os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
@@ -246,7 +207,7 @@ class LnkAlg:
                 for k in range(n):
                     results = self.run_alg(is_hub_start)
                     tree = results[1]
-                    if results[0].number_of_nodes() >= critical_len and export_results:
+                    if results[0].number_of_nodes() >= crit_len and export_results:
                         graph_name = self.START_FOLDER \
                                      + "/sim_" + str(sim_id) + "_" \
                                      + "graph_" + str(graph_number) \

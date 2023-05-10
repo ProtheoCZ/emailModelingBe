@@ -4,6 +4,10 @@ import networkx as nx
 
 
 HUB_THRESHOLD = 50
+POST_COLOR = 'rgb(0,255,0)'
+RESPONSE_COLOR = 'rgb(0,0,255)'
+START_COLOR = 'rgb(242,245,66)'
+RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
 
 
 def get_hub_start(graph, n):  # n is the number of neighbors needed to be considered a hub
@@ -54,3 +58,39 @@ def add_node_to_graph(graph, node):
             label=node['label'],
             id=node['id']
         )
+
+
+def treeify(graph):
+    ret_graph = nx.Graph()
+    start_node = None
+    post_nodes = []
+    for node in graph.nodes:
+        displayed_color = graph.nodes[node]['displayed_color']
+        if displayed_color == POST_COLOR:
+            post_nodes.append(node)
+        if displayed_color == START_COLOR:
+            start_node = graph.nodes[node]
+            post_nodes.append(node)
+
+    add_node_to_graph(ret_graph, start_node)
+
+    edge_id = 0
+    for i in range(len(post_nodes) - 1):
+        shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i + 1])
+        for idx, node in enumerate(shortest_path):
+            add_node_to_graph(ret_graph, graph.nodes[node])
+            if idx + 1 < len(shortest_path):
+                neighbor = shortest_path[idx + 1]
+                ret_graph.add_edge(
+                    node,
+                    neighbor,
+                    displayed_color=RESPONSE_EDGE_COLOR,
+                    size=1,
+                    id=edge_id
+                )
+                edge_id += 1
+    is_tree = nx.is_tree(ret_graph)
+    print("is_tree = " + str(is_tree))
+    # if is_tree:
+    #     ret_graph = self.order_tree(ret_graph, start_node['id'])
+    return ret_graph

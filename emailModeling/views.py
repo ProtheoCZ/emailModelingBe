@@ -1,7 +1,7 @@
 import json
 import os
 from .algorithms.GraphProcessor import GraphProcessor
-from .algorithms.Relatability import simulate_relatability
+from .algorithms.Relatability import simulate_relatability,run_full_relatability
 
 from django.http import JsonResponse, HttpResponse
 
@@ -60,3 +60,9 @@ def get_relatability_coloring(request):
     else:
         return JsonResponse({"graphs": [], "compatible": 1})
 
+
+@csrf_exempt
+def get_full_relatability_sim(request):
+    if len(request.body.decode('utf-8')) > 0:
+        run_full_relatability(request.body.decode('utf-8'), 6000, False)
+    return JsonResponse({"graphs": [], "compatible": 1})
