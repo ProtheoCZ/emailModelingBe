@@ -6,6 +6,7 @@ import networkx as nx
 from ..utils import GraphTools as Gt
 from ..utils import StatsProvider as Sp
 
+#todo replace all big arrays with numpy
 
 class LnkAlg:
     def __init__(self, graph, graph_name, discard_rate, back_rate, post_rate):

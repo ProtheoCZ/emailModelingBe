@@ -1,9 +1,10 @@
 import json
 import os
 from .algorithms.GraphProcessor import GraphProcessor
-from .algorithms.Relatability import simulate_relatability,run_full_relatability
+from .algorithms.Relatability import simulate_relatability, run_full_relatability
+from .algorithms.G_W_algorithm import full_gw_sim
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
@@ -65,4 +66,10 @@ def get_relatability_coloring(request):
 def get_full_relatability_sim(request):
     if len(request.body.decode('utf-8')) > 0:
         run_full_relatability(request.body.decode('utf-8'), 6000, False)
+    return JsonResponse({"graphs": [], "compatible": 1})
+
+
+@csrf_exempt
+def get_full_gw_sim(request):
+    full_gw_sim(10000)
     return JsonResponse({"graphs": [], "compatible": 1})
