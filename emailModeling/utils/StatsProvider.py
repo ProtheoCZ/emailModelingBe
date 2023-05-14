@@ -254,7 +254,7 @@ def get_summary_stats(sim_id, algorithm, critical_len=100):
         "summary_tree_stats": sum_tree_result,
         "summary_graph_stats": sum_graph_result,
         "runs over crit len of - " + str(critical_len): runs_over_critical_len,
-        "algorithm" : algorithm
+        "algorithm": algorithm
     }
 
     with open(path + 'Summary.json', 'w') as summary:

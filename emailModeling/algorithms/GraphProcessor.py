@@ -5,7 +5,7 @@ import pandas as pd
 
 import networkx as nx
 from .L_NK_algorithm import LnkAlg
-from .G_W_algorithm import generate_tree, full_gw_sim
+from .G_W_algorithm import generate_tree
 
 
 def get_fraction_of_nodes_with_one_child(graph):
@@ -169,10 +169,6 @@ class GraphProcessor:
         ret_json["graphs"].append(self.networkx_to_json())
 
         return ret_json
-
-    def process_full_gw_tree(self):
-        full_gw_sim(10000)
-        return {"graphs": [], "compatible": 1}
 
     def get_degree_distribution(self):
         if isinstance(self.graph, nx.Graph):

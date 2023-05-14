@@ -6,7 +6,6 @@ import networkx as nx
 from ..utils import GraphTools as Gt
 from ..utils import StatsProvider as Sp
 
-#todo replace all big arrays with numpy
 
 class LnkAlg:
     def __init__(self, graph, graph_name, discard_rate, back_rate, post_rate):
@@ -92,35 +91,6 @@ class LnkAlg:
 
         return ret_graph
 
-    def get_avg_post_children(self, graph):
-        if isinstance(graph, nx.Graph):
-            val_arr = []
-            for node in graph.nodes:
-                if graph.nodes[node]['displayed_color'] == Gt.POST_COLOR:
-                    neighbors = [n for n in graph.neighbors(node)]
-                    number_of_posting_neighbors = 0
-                    for neighbor in neighbors:
-                        if graph.nodes[neighbor]['displayed_color'] == Gt.POST_COLOR:
-                            number_of_posting_neighbors += 1
-                    val_arr.append(number_of_posting_neighbors)
-
-            non_zero_val_arr = [v for v in val_arr if v > 0]
-
-            if len(val_arr) and len(non_zero_val_arr) > 0:
-                print("average number of posting neighbors is: " + str(sum(val_arr) / len(val_arr)))
-                print("average number non zero posting neighbors is: " + str(
-                    sum(non_zero_val_arr) / len(non_zero_val_arr)))
-                # return sum(val_arr)/len(val_arr)
-            else:
-                print("nobody responded!")
-
-    # def get_hub_start(self, n):  # n is the number of neighbors needed to be considered a hub
-    #     while True:
-    #         start_node_id = random.sample(self.graph.nodes, 1)[0]
-    #         neighbors = [n for n in self.graph.neighbors(start_node_id)]
-    #         if len(neighbors) >= n:
-    #             return self.graph.nodes[start_node_id]
-
     def run_alg(self, is_hub_start):
         # start_node = random.sample(self.graph.nodes, 1)
         # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
@@ -191,7 +161,15 @@ class LnkAlg:
 
         return ret_array
 
-    def run_full_simulation(self, crit_len, n, is_hub_start: bool, max_back_rate, max_post_rate, export_results=False, export_stats=True):
+    def run_full_simulation(self,
+                            crit_len,
+                            n,
+                            is_hub_start: bool,
+                            max_back_rate,
+                            max_post_rate,
+                            export_results=False,
+                            export_stats=True
+                            ):
         sim_id = Sp.get_sim_id()
         if export_stats:
             os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
