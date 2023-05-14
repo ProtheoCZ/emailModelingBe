@@ -160,7 +160,7 @@ def get_sim_id():
     return sim_id
 
 
-def get_summary_stats(sim_id):
+def get_summary_stats(sim_id, algorithm, critical_len=100):
     path = FULL_SIM_DIR + '/Sim_' + str(sim_id) + '/'
     with open(path + '/Run_000001.json', 'r') as file:
         loaded_json = json.load(file)
@@ -180,9 +180,10 @@ def get_summary_stats(sim_id):
         "non-tree_count": 0,
         "avg_triangles": 0,
         "avg_node_count": 0,
-
         "avg_depth": 0,
-        "avg_max_children": 0
+        "avg_max_children": 0,
+        "max_node_count": 0,
+        "max_depth": 0
     }
 
     sum_graph_result = {
@@ -191,8 +192,14 @@ def get_summary_stats(sim_id):
         "avg_post_nodes": 0,
         "avg_response_nodes": 0,
         "avg_hub_count": 0,
-        "avg_neighbors": 0
+        "avg_neighbors": 0,
+        "max_node_count": 0
     }
+
+    max_graph_node_count = 0
+    max_tree_node_count = 0
+    max_depth = 0
+    runs_over_critical_len = []
 
     for filename in os.listdir(path):
         with open(path + filename, 'r') as file:
@@ -203,7 +210,9 @@ def get_summary_stats(sim_id):
             # tree stats
             sum_tree_result["run_count"] += 1
             if tree_run["is_tree"] == 1:
-                sum_tree_result["avg_depth"] += tree_run["depth"]
+                depth = tree_run["depth"]
+                sum_tree_result["avg_depth"] += depth
+                max_depth = max(max_depth, depth)
                 sum_tree_result["avg_max_children"] += tree_run["max_children"]
                 for key in tree_run["children_counts"]:
                     sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
@@ -211,32 +220,41 @@ def get_summary_stats(sim_id):
             else:
                 sum_tree_result["avg_triangles"] += tree_run["triangles"]
 
-            sum_tree_result["avg_node_count"] += tree_run["node_count"]
+            tree_node_count = tree_run["node_count"]
+            sum_tree_result["avg_node_count"] += tree_node_count
+            max_tree_node_count = max(max_tree_node_count, tree_node_count)
 
             if tree_run["is_tree"] == 1:
                 sum_tree_result["tree_count"] += 1
             else:
                 sum_tree_result["non-tree_count"] += 1
 
-            # for key in tree_run["children_counts"]:
-            #     sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
-
             # graph stats
 
             sum_graph_result["run_count"] += 1
-            sum_graph_result["avg_node_count"] += graph_run["node_count"]
+            graph_node_count = graph_run["node_count"]
+            sum_graph_result["avg_node_count"] += graph_node_count
+            max_graph_node_count = max(graph_node_count, max_graph_node_count)
             sum_graph_result["avg_post_nodes"] += graph_run["post_nodes"]
             sum_graph_result["avg_response_nodes"] += graph_run["response_nodes"]
             sum_graph_result["avg_hub_count"] += graph_run["hub_count"]
             sum_graph_result["avg_neighbors"] += graph_run["avg_neighbors"]
 
+            if graph_node_count > critical_len:
+                runs_over_critical_len.append(file_json["run_id"])
+
+    sum_graph_result["max_node_count"] = max_graph_node_count
     sum_graph_result = get_avg_graph_stats(sum_graph_result)
+    sum_tree_result["max_node_count"] = max_tree_node_count
+    sum_tree_result["max_depth"] = max_depth
     sum_tree_result = get_avg_tree_stats(sum_tree_result)
 
     result = {
         **static_result,
         "summary_tree_stats": sum_tree_result,
-        "summary_graph_stats": sum_graph_result
+        "summary_graph_stats": sum_graph_result,
+        "runs over crit len of - " + str(critical_len): runs_over_critical_len,
+        "algorithm" : algorithm
     }
 
     with open(path + 'Summary.json', 'w') as summary:

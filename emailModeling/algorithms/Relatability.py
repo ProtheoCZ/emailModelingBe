@@ -54,7 +54,7 @@ def run_full_relatability(graph_name, run_count, is_hub_start: bool, export_stat
             print("run #" + str(i + 1) + " of " + str(run_count))
 
         if export_stats:
-            Sp.get_summary_stats(sim_id)
+            Sp.get_summary_stats(sim_id, "age relatability")
 
 
 def json_loader(json_graph_name):

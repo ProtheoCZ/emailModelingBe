@@ -239,4 +239,4 @@ class LnkAlg:
 
                 self.post_rate += 0.01
         if export_stats:
-            Sp.get_summary_stats(sim_id)
+            Sp.get_summary_stats(sim_id, "Lnk")

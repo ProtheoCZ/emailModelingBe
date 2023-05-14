@@ -85,4 +85,4 @@ def full_gw_sim(run_count, export_stats=True):
         print("run #" + str(i + 1) + " of " + str(run_count))
 
     if export_stats:
-        Sp.get_summary_stats(sim_id)
+        Sp.get_summary_stats(sim_id, "Galton Watson tree")
