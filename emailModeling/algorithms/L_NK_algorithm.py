@@ -10,9 +10,9 @@ from ..utils import StatsProvider as Sp
 class LnkAlg:
     def __init__(self, graph, graph_name, discard_rate, back_rate, post_rate):
         self.start_node = None
-        self.lower_bound = 0.05
-        self.upper_bound = 0.1
-        self.interval_increase = 0.1
+        self.lower_bound = 1
+        self.upper_bound = 1.01
+        self.interval_increase = 0.01
         self.exponent = -3 / 2
         self.integral_array = []
         self.values = []
@@ -20,7 +20,7 @@ class LnkAlg:
         self.graph = nx.Graph  # remove this
         self.graph_name = graph_name
         self.START_FOLDER = 'fullSimData'
-        self.ITERATION_COUNT = 1001
+        self.ITERATION_COUNT = 100001
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
@@ -38,7 +38,7 @@ class LnkAlg:
 
     def generate_t_probabilities(self):
         x = sy.Symbol("x")
-        print(sy.integrate(self.f(x), (x, 0.05, 0.1)))
+        print(sy.integrate(self.f(x), (x, self.lower_bound, self.upper_bound)))
 
         while self.upper_bound <= 20:  # 20
             interval_integral = sy.integrate(self.f(x), (x, self.lower_bound, self.upper_bound))
@@ -95,16 +95,16 @@ class LnkAlg:
         # start_node = random.sample(self.graph.nodes, 1)
         # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
         # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
-        # start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
+        self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
         # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
         # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
         # start_node = self.graph.nodes['122']
 
-        if is_hub_start:
-            # self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
-            self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
-        else:
-            self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
+        # if is_hub_start:
+        #     # self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
+        #     self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
+        # else:
+        #     self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 
         ret_array = []
 
@@ -149,11 +149,11 @@ class LnkAlg:
                                 nx.set_node_attributes(self.graph, {neighbor: t + i}, name="t")
                                 active_nodes[t].append((receiver, neighbor))
             self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
-            if i == 1000:
+            if i == 100000:
                 ret_graph = self.getOnlyColoredNodes()
                 ret_array.append(ret_graph)
 
-                ret_tree = Gt.treeify(ret_graph)
+                ret_tree = Gt.treeify(ret_graph, to_start=True)
                 ret_array.append(ret_tree)
                 if nx.is_tree(ret_tree):
                     ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])

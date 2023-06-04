@@ -60,7 +60,7 @@ def add_node_to_graph(graph, node):
         )
 
 
-def treeify(graph):
+def treeify(graph, to_start=False):
     ret_graph = nx.Graph()
     start_node = None
     post_nodes = []
@@ -76,7 +76,10 @@ def treeify(graph):
 
     edge_id = 0
     for i in range(len(post_nodes) - 1):
-        shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i + 1])
+        if to_start:
+            shortest_path = nx.dijkstra_path(graph, post_nodes[i + 1], start_node['id'])
+        else:
+            shortest_path = nx.dijkstra_path(graph, post_nodes[i], post_nodes[i + 1])
         for idx, node in enumerate(shortest_path):
             add_node_to_graph(ret_graph, graph.nodes[node])
             if idx + 1 < len(shortest_path):
@@ -94,3 +97,5 @@ def treeify(graph):
     # if is_tree:
     #     ret_graph = self.order_tree(ret_graph, start_node['id'])
     return ret_graph
+
+
