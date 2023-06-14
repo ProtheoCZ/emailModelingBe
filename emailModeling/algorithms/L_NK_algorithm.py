@@ -61,9 +61,7 @@ class LnkAlg:
         ret_graph = nx.Graph()
         for node in self.graph.nodes:
             displayed_color = self.graph.nodes[node]['displayed_color']
-            if displayed_color == Gt.POST_COLOR \
-                    or displayed_color == Gt.RESPONSE_COLOR \
-                    or displayed_color == Gt.START_COLOR:
+            if displayed_color in [Gt.POST_COLOR, Gt.RESPONSE_COLOR, Gt.START_COLOR]:
                 node_to_add = self.graph.nodes[node]
                 ret_graph.add_node(
                     node_to_add['id'],
@@ -107,6 +105,8 @@ class LnkAlg:
             self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 
         ret_array = []
+        ret_graph_with_group_reply = nx.Graph()
+        Gt.add_node_to_graph(ret_graph_with_group_reply, self.start_node)
 
         active_nodes = [[] for _ in range(self.ITERATION_COUNT)]
         responders = []
@@ -120,18 +120,18 @@ class LnkAlg:
             for node_pair in active_nodes[i]:
                 receiver = node_pair[1]
                 sender = node_pair[0]
-
+                receiver_node = self.graph.nodes[receiver]
                 attrs = {(sender, receiver): {'displayed_color': Gt.RESPONSE_EDGE_COLOR}}
                 if random.random() - self.back_rate >= 0:
                     if random.random() <= self.post_rate:
-                        self.graph.nodes[receiver]['displayed_color'] = Gt.POST_COLOR
-                        responders.append(receiver)
-                        nx.set_edge_attributes(self.graph, attrs)
-
+                        receiver_node['displayed_color'] = Gt.POST_COLOR
                     else:
                         self.graph.nodes[receiver]['displayed_color'] = Gt.RESPONSE_COLOR
-                        responders.append(receiver)
-                        nx.set_edge_attributes(self.graph, attrs)
+
+                    responders.append(receiver)
+                    nx.set_edge_attributes(self.graph, attrs)
+                    Gt.add_node_to_graph(ret_graph_with_group_reply, receiver_node)
+                    ret_graph_with_group_reply.add_edge(sender, receiver)
 
                     for neighbor in self.graph.neighbors(receiver):
                         if random.random() - self.discard_rate >= 0:
@@ -148,11 +148,17 @@ class LnkAlg:
                                 t = self.generate_t()
                                 nx.set_node_attributes(self.graph, {neighbor: t + i}, name="t")
                                 active_nodes[t].append((receiver, neighbor))
+
+                else:
+                    self.graph.nodes[receiver]['displayed_color'] = Gt.GROUP_REPLY_COLOR
+                    Gt.add_node_to_graph(ret_graph_with_group_reply, receiver_node)
+                    ret_graph_with_group_reply.add_edge(sender, receiver)
+
             self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
             if i == 100000:
                 ret_graph = self.getOnlyColoredNodes()
                 ret_array.append(ret_graph)
-
+                ret_array.append(ret_graph_with_group_reply)
                 ret_tree = Gt.treeify(ret_graph, to_start=True)
                 ret_array.append(ret_tree)
                 if nx.is_tree(ret_tree):

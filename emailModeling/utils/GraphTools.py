@@ -8,6 +8,7 @@ POST_COLOR = 'rgb(0,255,0)'
 RESPONSE_COLOR = 'rgb(0,0,255)'
 START_COLOR = 'rgb(242,245,66)'
 RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
+GROUP_REPLY_COLOR = 'rgb(105,105,105)'
 
 
 def get_hub_start(graph, n):  # n is the number of neighbors needed to be considered a hub
