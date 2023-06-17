@@ -204,7 +204,7 @@ class LnkAlg:
             for j in range(number_of_pr_increases):
                 for k in range(n):
                     results = self.run_alg(is_hub_start)
-                    tree = results[1]
+                    tree = results[2]
                     if results[0].number_of_nodes() >= crit_len and export_results:
                         graph_name = self.START_FOLDER \
                                      + "/sim_" + str(sim_id) + "_" \
@@ -221,13 +221,15 @@ class LnkAlg:
 
                     if export_stats:
                         graph = results[0]
+                        graph_with_back_rate = results[1]
                         Sp.get_stats(tree,
                                      self.start_node['id'],
                                      self.graph_name,
                                      is_hub_start,
                                      run_number,
                                      sim_id,
-                                     graph
+                                     graph,
+                                     graph_with_back_rate
                                      )
 
                     print("run #" + str(run_number) + " of " + str(number_of_runs))

@@ -6,9 +6,9 @@ from ..utils import GraphTools as Gt
 
 RECORDED_CHILDREN_COUNT = 10
 FULL_SIM_DIR = 'fullSimStats'
-POST_COLOR = 'rgb(0,255,0)'
-RESPONSE_COLOR = 'rgb(0,0,255)'
-START_COLOR = 'rgb(242,245,66)'
+# POST_COLOR = 'rgb(0,255,0)'
+# RESPONSE_COLOR = 'rgb(0,0,255)'
+# START_COLOR = 'rgb(242,245,66)'
 
 
 def get_children_stats(graph, root):
@@ -82,13 +82,13 @@ def get_tree_stats(graph, root, is_hub_start):
         return result_stats
 
 
-def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph):
+def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph_with_group_reply=None):
     metadata = {
         "original_graph_name": graph_name,
         "run_id": run_id
     }
     run_tree_result = get_tree_stats(tree, root, is_hub_start)
-    graph_stats = get_graph_stats(graph)
+    graph_stats = get_graph_stats(graph, graph_with_group_reply)
     run_result = {**metadata, **run_tree_result, **graph_stats}
     run_diff = 6 - len(str(run_id))
     sim_diff = 3 - len(str(sim_id))
@@ -105,7 +105,7 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph):
         json.dump(run_result, json_file)
 
 
-def get_graph_stats(graph):
+def get_graph_stats(graph, graph_with_group_reply):
     if isinstance(graph, nx.Graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0
@@ -122,13 +122,18 @@ def get_graph_stats(graph):
 
             avg_neighbors += neighbors_len
 
-            if color == START_COLOR or color == POST_COLOR:
+            if color == Gt.START_COLOR or color == Gt.POST_COLOR:
                 post_nodes += 1
 
-            if color == RESPONSE_COLOR:
+            if color == Gt.RESPONSE_COLOR:
                 response_nodes += 1
 
         avg_neighbors = avg_neighbors / node_count
+        group_reply_node_count = 0
+        if graph_with_group_reply is not None:
+            for node in graph_with_group_reply.nodes:
+                if graph_with_group_reply.nodes[node]['displayed_color'] == Gt.GROUP_REPLY_COLOR:
+                    group_reply_node_count += 1
 
         ret_dict = {
             "full_graph_stats": {
@@ -136,6 +141,7 @@ def get_graph_stats(graph):
                 "post_nodes": post_nodes,
                 "response_nodes": response_nodes,
                 "hub_count": hub_count,
+                "group_reply_node_count": group_reply_node_count,
                 "avg_neighbors": avg_neighbors
             }
         }
@@ -191,6 +197,7 @@ def get_summary_stats(sim_id, algorithm, critical_len=100):
         "avg_node_count": 0,
         "avg_post_nodes": 0,
         "avg_response_nodes": 0,
+        "avg_group_reply_nodes": 0,
         "avg_hub_count": 0,
         "avg_neighbors": 0,
         "max_node_count": 0
@@ -237,6 +244,7 @@ def get_summary_stats(sim_id, algorithm, critical_len=100):
             max_graph_node_count = max(graph_node_count, max_graph_node_count)
             sum_graph_result["avg_post_nodes"] += graph_run["post_nodes"]
             sum_graph_result["avg_response_nodes"] += graph_run["response_nodes"]
+            sum_graph_result["avg_group_reply_nodes"] += graph_run["group_reply_node_count"]
             sum_graph_result["avg_hub_count"] += graph_run["hub_count"]
             sum_graph_result["avg_neighbors"] += graph_run["avg_neighbors"]
 
@@ -275,6 +283,7 @@ def get_avg_graph_stats(sum_graph_result):
     sum_graph_result["avg_node_count"] = sum_graph_result["avg_node_count"] / run_count
     sum_graph_result["avg_post_nodes"] = sum_graph_result["avg_post_nodes"] / run_count
     sum_graph_result["avg_response_nodes"] = sum_graph_result["avg_response_nodes"] / run_count
+    sum_graph_result["avg_group_reply_nodes"] = sum_graph_result["avg_group_reply_nodes"] / run_count
     sum_graph_result["avg_hub_count"] = sum_graph_result["avg_hub_count"] / run_count
     sum_graph_result["avg_neighbors"] = sum_graph_result["avg_neighbors"] / run_count
 
