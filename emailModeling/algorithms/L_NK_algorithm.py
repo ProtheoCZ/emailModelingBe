@@ -106,6 +106,7 @@ class LnkAlg:
 
         ret_array = []
         ret_graph_with_group_reply = nx.Graph()
+        ret_graph_with_group_reply_edge_id = 1
         Gt.add_node_to_graph(ret_graph_with_group_reply, self.start_node)
 
         active_nodes = [[] for _ in range(self.ITERATION_COUNT)]
@@ -131,7 +132,13 @@ class LnkAlg:
                     responders.append(receiver)
                     nx.set_edge_attributes(self.graph, attrs)
                     Gt.add_node_to_graph(ret_graph_with_group_reply, receiver_node)
-                    ret_graph_with_group_reply.add_edge(sender, receiver)
+                    ret_graph_with_group_reply.add_edge(sender,
+                                                        receiver,
+                                                        displayed_color=Gt.RESPONSE_EDGE_COLOR,
+                                                        size=1,
+                                                        id=ret_graph_with_group_reply_edge_id
+                                                        )
+                    ret_graph_with_group_reply_edge_id += 1
 
                     for neighbor in self.graph.neighbors(receiver):
                         if random.random() - self.discard_rate >= 0:
@@ -152,7 +159,13 @@ class LnkAlg:
                 else:
                     self.graph.nodes[receiver]['displayed_color'] = Gt.GROUP_REPLY_COLOR
                     Gt.add_node_to_graph(ret_graph_with_group_reply, receiver_node)
-                    ret_graph_with_group_reply.add_edge(sender, receiver)
+                    ret_graph_with_group_reply.add_edge(sender,
+                                                        receiver,
+                                                        displayed_color=Gt.RESPONSE_EDGE_COLOR,
+                                                        size=1,
+                                                        id=ret_graph_with_group_reply_edge_id)
+                    ret_graph_with_group_reply_edge_id += 1
+
 
             self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
             if i == 100000:
