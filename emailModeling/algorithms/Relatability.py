@@ -17,20 +17,20 @@ start_node_id = 'xxx'
 
 def simulate_relatability(graph_name):
     ret_json = {"graphs": [], "compatible": 0}
-    json_graph = json_loader(graph_name)
+    json_graph = Gt.json_loader(graph_name)
 
     if isGraphCompatibleLite(json_graph):
         graph = json_to_nx(json_graph)
         ret_graphs = age_relatability(graph, True, True)
         for graph in ret_graphs:
-            ret_json["graphs"].append(nx_to_json(graph))
+            ret_json["graphs"].append(Gt.nx_to_json(graph))
         ret_json["compatible"] = 1
 
     return ret_json
 
 
 def run_full_relatability(graph_name, run_count, is_hub_start: bool, export_stats=True):
-    json_graph = json_loader(graph_name)
+    json_graph = Gt.json_loader(graph_name)
     if isGraphCompatibleLite(json_graph):
         sim_id = Sp.get_sim_id()
         if export_stats:
@@ -55,12 +55,6 @@ def run_full_relatability(graph_name, run_count, is_hub_start: bool, export_stat
 
         if export_stats:
             Sp.get_summary_stats(sim_id, "age relatability")
-
-
-def json_loader(json_graph_name):
-    file = open('GraphData/' + json_graph_name)
-    json_file = json.load(file)
-    return json_file
 
 
 def json_to_nx(json_graph):
@@ -89,37 +83,6 @@ def json_to_nx(json_graph):
         )
 
     return graph
-
-
-def nx_to_json(graph):
-    ret_json = {
-        "nodes": [],
-        "edges": []
-    }
-    for node in graph.nodes:
-        json_node = {
-            "label": graph.nodes[node]["label"],
-            "x": graph.nodes[node]["x"],
-            "y": graph.nodes[node]["y"],
-            "id": graph.nodes[node]["id"],
-            "attributes": {},
-            "color": graph.nodes[node]["displayed_color"],
-            "size": graph.nodes[node]["size"]
-        }
-        ret_json["nodes"].append(json_node)
-
-    for edge in graph.edges:
-        json_edge = {
-            "source": edge[0],
-            "target": edge[1],
-            "id": graph.edges[edge]["id"],
-            "attributes": {},
-            "color": graph.edges[edge]["displayed_color"],
-            "size": graph.edges[edge]["size"],
-        }
-        ret_json["edges"].append(json_edge)
-
-    return ret_json
 
 
 def age_relatability(graph, is_hub_start: bool, with_lnk_coloring=False):

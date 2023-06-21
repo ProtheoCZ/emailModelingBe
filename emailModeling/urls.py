@@ -10,5 +10,6 @@ urlpatterns = [
     path('getFullSim/', views.get_full_lnk_sim),
     path('getRelatabilityColoring/', views.get_relatability_coloring),
     path('getFullRelatabilitySim/', views.get_full_relatability_sim),
-    path('getFullGwSim/', views.get_full_gw_sim)
+    path('getFullGwSim/', views.get_full_gw_sim),
+    path('getRumorSim/', views.get_rumor_sim)
    ]

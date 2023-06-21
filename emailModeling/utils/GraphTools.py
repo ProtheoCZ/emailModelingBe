@@ -1,3 +1,4 @@
+import json
 import random
 
 import networkx as nx
@@ -9,6 +10,9 @@ RESPONSE_COLOR = 'rgb(0,0,255)'
 START_COLOR = 'rgb(242,245,66)'
 RESPONSE_EDGE_COLOR = 'rgb(255,0,0)'
 GROUP_REPLY_COLOR = 'rgb(105,105,105)'
+IGNORANT_COLOR = 'rgb(0,0,0)'
+STIFLER_COLOR = 'rgb(128,0,128)'
+SPREADER_COLOR = 'rgb(255,0,0)'
 
 
 def get_hub_start(graph, n):  # n is the number of neighbors needed to be considered a hub
@@ -100,3 +104,38 @@ def treeify(graph, to_start=False):
     return ret_graph
 
 
+def json_loader(json_graph_name):
+    file = open('GraphData/' + json_graph_name)
+    json_file = json.load(file)
+    return json_file
+
+
+def nx_to_json(graph):
+    ret_json = {
+        "nodes": [],
+        "edges": []
+    }
+    for node in graph.nodes:
+        json_node = {
+            "label": graph.nodes[node]["label"],
+            "x": graph.nodes[node]["x"],
+            "y": graph.nodes[node]["y"],
+            "id": graph.nodes[node]["id"],
+            "attributes": {},
+            "color": graph.nodes[node]["displayed_color"],
+            "size": graph.nodes[node]["size"]
+        }
+        ret_json["nodes"].append(json_node)
+
+    for edge in graph.edges:
+        json_edge = {
+            "source": edge[0],
+            "target": edge[1],
+            "id": graph.edges[edge]["id"],
+            "attributes": {},
+            "color": graph.edges[edge]["displayed_color"],
+            "size": graph.edges[edge]["size"],
+        }
+        ret_json["edges"].append(json_edge)
+
+    return ret_json

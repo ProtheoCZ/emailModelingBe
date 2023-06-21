@@ -9,6 +9,8 @@ from django.http import JsonResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 
+from .algorithms.rumor_spread import simulate_rumor_spread
+
 
 @csrf_exempt
 def get_graph(request):  # POST
@@ -73,3 +75,11 @@ def get_full_relatability_sim(request):
 def get_full_gw_sim(request):
     full_gw_sim(10000)
     return JsonResponse({"graphs": [], "compatible": 1})
+
+
+@csrf_exempt
+def get_rumor_sim(request):
+    if len(request.body.decode('utf-8')) > 0:
+        return JsonResponse(simulate_rumor_spread(request.body.decode('utf-8')))
+    else:
+        return JsonResponse({"graphs": [], "compatible": 1})
