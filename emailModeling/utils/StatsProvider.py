@@ -87,7 +87,17 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph
         "original_graph_name": graph_name,
         "run_id": run_id
     }
-    run_tree_result = get_tree_stats(tree, root, is_hub_start)
+    if tree is not None:
+        run_tree_result = get_tree_stats(tree, root, is_hub_start)
+    else:
+        run_tree_result = {
+            "tree_result_stats": {
+                "is_tree": 0,
+                "node_count": 0,
+                "is_hub_start": int(is_hub_start)
+            }
+        }
+
     graph_stats = get_graph_stats(graph, graph_with_group_reply)
     run_result = {**metadata, **run_tree_result, **graph_stats}
     run_diff = 6 - len(str(run_id))
@@ -130,6 +140,7 @@ def get_graph_stats(graph, graph_with_group_reply):
 
         avg_neighbors = avg_neighbors / node_count
         group_reply_node_count = 0
+
         if graph_with_group_reply is not None:
             for node in graph_with_group_reply.nodes:
                 if graph_with_group_reply.nodes[node]['displayed_color'] == Gt.GROUP_REPLY_COLOR:
@@ -166,7 +177,7 @@ def get_sim_id():
     return sim_id
 
 
-def get_summary_stats(sim_id, algorithm, critical_len=100):
+def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = True):
     path = FULL_SIM_DIR + '/Sim_' + str(sim_id) + '/'
     with open(path + '/Run_000001.json', 'r') as file:
         loaded_json = json.load(file)
@@ -215,26 +226,27 @@ def get_summary_stats(sim_id, algorithm, critical_len=100):
             graph_run = file_json["full_graph_stats"]
 
             # tree stats
-            sum_tree_result["run_count"] += 1
-            if tree_run["is_tree"] == 1:
-                depth = tree_run["depth"]
-                sum_tree_result["avg_depth"] += depth
-                max_depth = max(max_depth, depth)
-                sum_tree_result["avg_max_children"] += tree_run["max_children"]
-                for key in tree_run["children_counts"]:
-                    sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
+            if with_tree:
+                sum_tree_result["run_count"] += 1
+                if tree_run["is_tree"] == 1:
+                    depth = tree_run["depth"]
+                    sum_tree_result["avg_depth"] += depth
+                    max_depth = max(max_depth, depth)
+                    sum_tree_result["avg_max_children"] += tree_run["max_children"]
+                    for key in tree_run["children_counts"]:
+                        sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
-            else:
-                sum_tree_result["avg_triangles"] += tree_run["triangles"]
+                else:
+                    sum_tree_result["avg_triangles"] += tree_run["triangles"]
 
-            tree_node_count = tree_run["node_count"]
-            sum_tree_result["avg_node_count"] += tree_node_count
-            max_tree_node_count = max(max_tree_node_count, tree_node_count)
+                tree_node_count = tree_run["node_count"]
+                sum_tree_result["avg_node_count"] += tree_node_count
+                max_tree_node_count = max(max_tree_node_count, tree_node_count)
 
-            if tree_run["is_tree"] == 1:
-                sum_tree_result["tree_count"] += 1
-            else:
-                sum_tree_result["non-tree_count"] += 1
+                if tree_run["is_tree"] == 1:
+                    sum_tree_result["tree_count"] += 1
+                else:
+                    sum_tree_result["non-tree_count"] += 1
 
             # graph stats
 
@@ -253,9 +265,10 @@ def get_summary_stats(sim_id, algorithm, critical_len=100):
 
     sum_graph_result["max_node_count"] = max_graph_node_count
     sum_graph_result = get_avg_graph_stats(sum_graph_result)
-    sum_tree_result["max_node_count"] = max_tree_node_count
-    sum_tree_result["max_depth"] = max_depth
-    sum_tree_result = get_avg_tree_stats(sum_tree_result)
+    if with_tree:
+        sum_tree_result["max_node_count"] = max_tree_node_count
+        sum_tree_result["max_depth"] = max_depth
+        sum_tree_result = get_avg_tree_stats(sum_tree_result)
 
     result = {
         **static_result,

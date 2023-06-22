@@ -1,8 +1,10 @@
+import os
 import random
 
 import networkx as nx
 
 from ..utils import GraphTools as Gt
+from ..utils import StatsProvider as Sp
 
 IGNORANT_TO_SPREADER = 0  # todo lambda
 SPREADER_TO_STIFLER = 0  # todo alfa
@@ -62,7 +64,7 @@ def json_to_nx(json_graph):
     return graph
 
 
-def rumor_spread(graph, is_hub_start: bool):
+def rumor_spread(graph, is_hub_start: bool = False):
     if is_hub_start:
         start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
     else:
@@ -107,8 +109,9 @@ def rumor_spread(graph, is_hub_start: bool):
                         graph.nodes[current_node_id]['rumor_group'] = STIFLER
                         ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
 
+    assign_visual_colors(graph)
     assign_visual_colors(ret_graph)
-    ret_graphs = [ret_graph]
+    ret_graphs = [graph, ret_graph]
 
     return ret_graphs
 
@@ -167,3 +170,34 @@ def convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph,current_
             size=1,
             id=current_edge_id
         )
+
+
+def run_full_rumor_spread(graph_name, run_count, is_hub_start: bool, export_stats=True):
+    json_graph = Gt.json_loader(graph_name)
+
+    if isGraphCompatible(json_graph):
+        sim_id = Sp.get_sim_id()
+        if export_stats:
+            os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
+
+        graph = json_to_nx(json_graph)
+
+        for i in range(run_count):
+            graphs = rumor_spread(graph.copy(), is_hub_start)
+
+            if export_stats:
+                Sp.get_stats(None,
+                             0,
+                             graph_name,
+                             is_hub_start,
+                             i + 1,
+                             sim_id,
+                             graphs[1]
+                             )
+
+            print("run #" + str(i + 1) + " of " + str(run_count))
+
+        if export_stats:
+            Sp.get_summary_stats(sim_id, 'rumor relatability', 1000, False)
+    else:
+        print("Graph is not compatible with the model")

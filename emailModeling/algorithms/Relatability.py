@@ -37,7 +37,7 @@ def run_full_relatability(graph_name, run_count, is_hub_start: bool, export_stat
             os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
         graph = json_to_nx(json_graph)
         for i in range(run_count):
-            graphs = age_relatability(graph, is_hub_start, True)
+            graphs = age_relatability(graph, is_hub_start, True)  # todo graph.copy()???
 
             if export_stats:
                 result_graph = graphs[0]

@@ -3,13 +3,14 @@ import os
 from .algorithms.GraphProcessor import GraphProcessor
 from .algorithms.Relatability import simulate_relatability, run_full_relatability
 from .algorithms.G_W_algorithm import full_gw_sim
+from .algorithms.rumor_spread import simulate_rumor_spread, run_full_rumor_spread
 
 from django.http import JsonResponse
 
-# Create your views here.
+
 from django.views.decorators.csrf import csrf_exempt
 
-from .algorithms.rumor_spread import simulate_rumor_spread
+
 
 
 @csrf_exempt
@@ -83,3 +84,10 @@ def get_rumor_sim(request):
         return JsonResponse(simulate_rumor_spread(request.body.decode('utf-8')))
     else:
         return JsonResponse({"graphs": [], "compatible": 1})
+
+
+@csrf_exempt
+def get_full_rumor_sim(request):
+    if len(request.body.decode('utf-8')) > 0:
+        run_full_rumor_spread(request.body.decode('utf-8'), 2, False)
+    return JsonResponse({"graphs": [], "compatible": 1})
