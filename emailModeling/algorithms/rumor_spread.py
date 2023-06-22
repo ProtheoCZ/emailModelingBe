@@ -2,7 +2,7 @@ import random
 
 import networkx as nx
 
-from..utils import GraphTools as Gt
+from ..utils import GraphTools as Gt
 
 IGNORANT_TO_SPREADER = 0  # todo lambda
 SPREADER_TO_STIFLER = 0  # todo alfa
@@ -22,6 +22,8 @@ def simulate_rumor_spread(graph_name):
         for graph in ret_graphs:
             ret_json["graphs"].append(Gt.nx_to_json(graph))
         ret_json["compatible"] = 1
+
+    return ret_json
 
 
 def isGraphCompatible(graph):
@@ -45,7 +47,7 @@ def json_to_nx(json_graph):
             label=node['label'],
             id=node['id'],
             population_group=node['population_group'],
-            rumor_group='ignorant'
+            rumor_group=IGNORANT
         )
 
     for edge in json_graph['edges']:
@@ -81,9 +83,32 @@ def rumor_spread(graph, is_hub_start: bool):
         rumor_group=start_node['rumor_group']
     )
 
+    queue = []  # (sender, receiver)
+    current_edge_id = 1
 
-    ret_graph = assign_visual_colors(ret_graph)
-    ret_graphs = []
+    for neighbor in graph.neighbors(start_node_id):
+        convert_ignorant(start_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
+        current_edge_id += 1
+
+    while len(queue) > 0:
+        current_node_pair = queue.pop(0)
+        current_node_id = current_node_pair[1]
+
+        for neighbor in graph.neighbors(current_node_id):
+            neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
+
+            if random.random() < cessation_chance(current_node_id, neighbor):
+                if neighbor_rumor_group == IGNORANT:
+                    convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
+                    current_edge_id += 1
+                elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
+                    alfa_chance = spreader_to_stifler_chance(current_node_id, neighbor)
+                    if random.random() < alfa_chance:
+                        graph.nodes[current_node_id]['rumor_group'] = STIFLER
+                        ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
+
+    assign_visual_colors(ret_graph)
+    ret_graphs = [ret_graph]
 
     return ret_graphs
 
@@ -101,19 +126,44 @@ def assign_visual_colors(graph):
     return graph
 
 
+# Whenever a spreader contacts an ignorant, the ignorant becomes a spreader at a rate lambda.
 def ignorant_to_spreader_chance(sender_node, receiver_node):
     # todo implement
-    return 0
+    return 0.7
 
 
+# When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
 def spreader_to_stifler_chance(sender_node, receiver_node):
     # todo implement
-    return 0
+    return 0.6
 
 
 def cessation_chance(sender_node, receiver_node):
     # todo implement
-    return 0
+    return 0.5
 
 
+def convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph,current_edge_id):
+    lambda_chance = ignorant_to_spreader_chance(current_node_id, neighbor)
+    if random.random() < lambda_chance:
+        graph.nodes[neighbor]['rumor_group'] = SPREADER
+        queue.append((current_node_id, neighbor))
+        ret_graph.add_node(
+            neighbor,
+            x=graph.nodes[neighbor]['x'],
+            y=graph.nodes[neighbor]['y'],
+            size=graph.nodes[neighbor]['size'],
+            displayed_color=graph.nodes[neighbor]['displayed_color'],
+            label=graph.nodes[neighbor]['label'],
+            id=graph.nodes[neighbor]['id'],
+            population_group=graph.nodes[neighbor]['population_group'],
+            rumor_group=graph.nodes[neighbor]['rumor_group']
+        )
 
+        ret_graph.add_edge(
+            current_node_id,
+            neighbor,
+            displayed_color=Gt.RESPONSE_EDGE_COLOR,
+            size=1,
+            id=current_edge_id
+        )
