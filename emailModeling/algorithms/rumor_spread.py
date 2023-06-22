@@ -6,12 +6,18 @@ import networkx as nx
 from ..utils import GraphTools as Gt
 from ..utils import StatsProvider as Sp
 
-IGNORANT_TO_SPREADER = 0  # todo lambda
-SPREADER_TO_STIFLER = 0  # todo alfa
-CESSATION_RATE = 0  # todo delta
+
 SPREADER = 'spreader'
 STIFLER = 'stifler'
 IGNORANT = 'ignorant'
+OPPONENT = 'opponent'
+NEUTRAL = 'neutral'
+SUPPORTER = 'supporter'
+
+
+# When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
+# Whenever a spreader contacts an ignorant, the ignorant becomes a spreader at a rate lambda.
+# individuals may also cease spreading a rumour spontaneously (i.e., without the need for any contact) at a rate d
 
 
 def simulate_rumor_spread(graph_name):
@@ -64,7 +70,7 @@ def json_to_nx(json_graph):
     return graph
 
 
-def rumor_spread(graph, is_hub_start: bool = False):
+def rumor_spread(graph, is_hub_start: bool = False, cessation_chance=0.5, spreader_to_stifler_chance=0.5):
     if is_hub_start:
         start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
     else:
@@ -99,12 +105,12 @@ def rumor_spread(graph, is_hub_start: bool = False):
         for neighbor in graph.neighbors(current_node_id):
             neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
 
-            if random.random() < cessation_chance(current_node_id, neighbor):
+            if random.random() < cessation_chance:
                 if neighbor_rumor_group == IGNORANT:
                     convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
                     current_edge_id += 1
                 elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                    alfa_chance = spreader_to_stifler_chance(current_node_id, neighbor)
+                    alfa_chance = spreader_to_stifler_chance
                     if random.random() < alfa_chance:
                         graph.nodes[current_node_id]['rumor_group'] = STIFLER
                         ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
@@ -130,49 +136,57 @@ def assign_visual_colors(graph):
 
 
 # Whenever a spreader contacts an ignorant, the ignorant becomes a spreader at a rate lambda.
-def ignorant_to_spreader_chance(sender_node, receiver_node):
-    # todo implement
-    return 0.7
+def get_ignorant_to_spreader_chance(receiver_node):
+    if receiver_node['population_group'] == OPPONENT:
+        chance = get_opponent_to_spreader_conversion_chance()
+
+    elif receiver_node['population_group'] == NEUTRAL:
+        chance = get_neutral_to_spreader_conversion_chance()
+
+    elif receiver_node['population_group'] == SUPPORTER:
+        chance = get_supporter_to_spreader_conversion_chance()
+
+    else:
+        raise Exception("Population group not recognized")
+
+    return chance
 
 
-# When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
-def spreader_to_stifler_chance(sender_node, receiver_node):
-    # todo implement
-    return 0.6
+def convert_ignorant(current_node_id, neighbor_id, graph, queue, ret_graph, current_edge_id):
+    neighbor_node = graph.nodes[neighbor_id]
 
+    lambda_chance = get_ignorant_to_spreader_chance(neighbor_node)
 
-def cessation_chance(sender_node, receiver_node):
-    # todo implement
-    return 0.5
-
-
-def convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph,current_edge_id):
-    lambda_chance = ignorant_to_spreader_chance(current_node_id, neighbor)
     if random.random() < lambda_chance:
-        graph.nodes[neighbor]['rumor_group'] = SPREADER
-        queue.append((current_node_id, neighbor))
+        neighbor_node['rumor_group'] = SPREADER
+        queue.append((current_node_id, neighbor_id))
         ret_graph.add_node(
-            neighbor,
-            x=graph.nodes[neighbor]['x'],
-            y=graph.nodes[neighbor]['y'],
-            size=graph.nodes[neighbor]['size'],
-            displayed_color=graph.nodes[neighbor]['displayed_color'],
-            label=graph.nodes[neighbor]['label'],
-            id=graph.nodes[neighbor]['id'],
-            population_group=graph.nodes[neighbor]['population_group'],
-            rumor_group=graph.nodes[neighbor]['rumor_group']
+            neighbor_id,
+            x=neighbor_node['x'],
+            y=neighbor_node['y'],
+            size=neighbor_node['size'],
+            displayed_color=neighbor_node['displayed_color'],
+            label=neighbor_node['label'],
+            id=neighbor_node['id'],
+            population_group=neighbor_node['population_group'],
+            rumor_group=neighbor_node['rumor_group']
         )
 
         ret_graph.add_edge(
             current_node_id,
-            neighbor,
+            neighbor_id,
             displayed_color=Gt.RESPONSE_EDGE_COLOR,
             size=1,
             id=current_edge_id
         )
 
 
-def run_full_rumor_spread(graph_name, run_count, is_hub_start: bool, export_stats=True):
+def run_full_rumor_spread(graph_name,
+                          run_count,
+                          is_hub_start: bool,
+                          spreader_to_stifler_increase=0.25,
+                          cessation_increase=0.25,
+                          export_stats=True):
     json_graph = Gt.json_loader(graph_name)
 
     if isGraphCompatible(json_graph):
@@ -182,22 +196,101 @@ def run_full_rumor_spread(graph_name, run_count, is_hub_start: bool, export_stat
 
         graph = json_to_nx(json_graph)
 
+        cessation_chance = 0
+        spreader_to_stifler_chance = 0
+
+        cessation_runs = int(round((1 / cessation_increase) + 1))
+        spreader_to_stifler_runs = int(round((1 / spreader_to_stifler_increase) + 1))
+
+        run_number = 1
+
         for i in range(run_count):
-            graphs = rumor_spread(graph.copy(), is_hub_start)
+            for j in range(cessation_runs):
+                for k in range(spreader_to_stifler_runs):
+                    graphs = rumor_spread(graph.copy(), is_hub_start, cessation_chance, spreader_to_stifler_chance)
 
-            if export_stats:
-                Sp.get_stats(None,
-                             0,
-                             graph_name,
-                             is_hub_start,
-                             i + 1,
-                             sim_id,
-                             graphs[1]
-                             )
+                    if export_stats:
+                        Sp.get_stats(None,
+                                     0,
+                                     graph_name,
+                                     is_hub_start,
+                                     run_number,
+                                     sim_id,
+                                     graphs[1]
+                                     )
 
-            print("run #" + str(i + 1) + " of " + str(run_count))
+                    print("run #" + str(run_number) + " of " + str(run_count*cessation_runs*spreader_to_stifler_runs))
+                    spreader_to_stifler_chance += spreader_to_stifler_increase
+                    run_number += 1
+                cessation_chance += cessation_increase
 
         if export_stats:
             Sp.get_summary_stats(sim_id, 'rumor relatability', 1000, False)
     else:
         print("Graph is not compatible with the model")
+
+
+# source of reaction numbers
+# https://web.archive.org/web/20230621082805/https://www.irozhlas.cz/zpravy-domov/spolecnost-neduvery-serial-dezinformace-vyzkum-skupiny-seznam_2306120500_pik
+
+def get_opponent_to_spreader_conversion_chance():
+    strong_opponent_weight = 17
+    average_opponent_weight = 20
+    weak_opponent_weight = 17
+
+    weights = [strong_opponent_weight, average_opponent_weight, weak_opponent_weight]
+
+    strong_opponent_reactions = [0.73 + 0.13, 0.06 + 0.05, 0.03]
+    average_opponent_reactions = [0.44 + 0.30, 0.08 + 0.11, 0.06 + 0.01]
+    weak_opponent_reactions = [0.29 + 0.18, 0.34 + 0.11, 0.08]
+
+    strong_opponent_conversion_chance = strong_opponent_reactions[0] + strong_opponent_reactions[1] / 2
+    average_opponent_conversion_chance = average_opponent_reactions[0] + average_opponent_reactions[1] / 2
+    weak_opponent_conversion_chance = weak_opponent_reactions[0] + weak_opponent_reactions[1] / 2
+
+    conversion_chances = [strong_opponent_conversion_chance,
+                          average_opponent_conversion_chance,
+                          weak_opponent_conversion_chance]
+
+    return random.choices(conversion_chances, weights=weights, k=1)[0]
+
+
+def get_neutral_to_spreader_conversion_chance():
+    apathetic_weight = 6
+    there_is_something_to_it_weight = 13
+
+    weights = [apathetic_weight, there_is_something_to_it_weight]
+
+    apathetic_reactions = [0.05 + 0.07, 0.72 + 0.10, 0.05 + 0.07, 0.05 + 0.01]
+    there_is_something_to_it_reactions = [0.12 + 0.37, 0.11 + 0.25, 0.02 + 0.14]
+
+    apathetic_conversion_chance = apathetic_reactions[0] + apathetic_reactions[1] / 2
+    there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[0] + \
+                                                 there_is_something_to_it_reactions[1] / 2
+
+    conversion_chances = [apathetic_conversion_chance, there_is_something_to_it_conversion_chance]
+
+    return random.choices(conversion_chances, weights=weights, k=1)[0]
+
+
+def get_supporter_to_spreader_conversion_chance():
+    weak_covid_supporter_weight = 12
+    weak_migration_supporter_weight = 10
+    strong_supporter_weight = 6
+
+    weights = [weak_covid_supporter_weight, weak_migration_supporter_weight, strong_supporter_weight]
+
+    weak_covid_supporter_reactions = [0.08 + 0.10, 0.30 + 0.18, 0.23 + 0.13]
+    weak_migration_supporter_reactions = [0.28 + 0.16, 0.16 + 0.08, 0.16 + 0.16]
+    strong_supporter_reactions = [0.02 + 0.06, 0.09 + 0.14, 0.50 + 0.19]
+
+    weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[0] + weak_covid_supporter_reactions[1] / 2
+    weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[0] + weak_migration_supporter_reactions[1] / 2
+
+    strong_supporter_conversion_chance = strong_supporter_reactions[0] + strong_supporter_reactions[1] / 2
+
+    conversion_chances = [weak_covid_supporter_conversion_chance,
+                          weak_migration_supporter_conversion_chance,
+                          strong_supporter_conversion_chance]
+
+    return random.choices(conversion_chances, weights=weights)[0]
