@@ -26,7 +26,7 @@ def simulate_rumor_spread(graph_name):
 
     if isGraphCompatible(json_graph):
         graph = json_to_nx(json_graph)
-        ret_graphs = rumor_spread(graph, True)
+        ret_graphs = rumor_spread(graph, True, 0.75, 1)
         for graph in ret_graphs:
             ret_json["graphs"].append(Gt.nx_to_json(graph))
         ret_json["compatible"] = 1
@@ -105,7 +105,7 @@ def rumor_spread(graph, is_hub_start: bool = False, cessation_chance=0.5, spread
         for neighbor in graph.neighbors(current_node_id):
             neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
 
-            if random.random() < cessation_chance:
+            if random.random() > cessation_chance:
                 if neighbor_rumor_group == IGNORANT:
                     convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
                     current_edge_id += 1
@@ -240,13 +240,18 @@ def get_opponent_to_spreader_conversion_chance():
 
     weights = [strong_opponent_weight, average_opponent_weight, weak_opponent_weight]
 
-    strong_opponent_reactions = [0.73 + 0.13, 0.06 + 0.05, 0.03]
-    average_opponent_reactions = [0.44 + 0.30, 0.08 + 0.11, 0.06 + 0.01]
-    weak_opponent_reactions = [0.29 + 0.18, 0.34 + 0.11, 0.08]
+    strong_opponent_reactions = [0.73, 0.13, 0.05, 0.06, 0.03, 0.00]
+    average_opponent_reactions = [0.44, 0.30, 0.11, 0.08, 0.06, 0.01]
+    weak_opponent_reactions = [0.29, 0.18, 0.11, 0.34, 0.08, 0.00]
 
-    strong_opponent_conversion_chance = strong_opponent_reactions[0] + strong_opponent_reactions[1] / 2
-    average_opponent_conversion_chance = average_opponent_reactions[0] + average_opponent_reactions[1] / 2
-    weak_opponent_conversion_chance = weak_opponent_reactions[0] + weak_opponent_reactions[1] / 2
+    strong_opponent_conversion_chance = strong_opponent_reactions[-1] \
+                                        # + strong_opponent_reactions[1] / 2
+
+    average_opponent_conversion_chance = average_opponent_reactions[-1]\
+                                         # + average_opponent_reactions[1] / 2
+
+    weak_opponent_conversion_chance = weak_opponent_reactions[-1] \
+                                      # + weak_opponent_reactions[1] / 2
 
     conversion_chances = [strong_opponent_conversion_chance,
                           average_opponent_conversion_chance,
@@ -261,12 +266,14 @@ def get_neutral_to_spreader_conversion_chance():
 
     weights = [apathetic_weight, there_is_something_to_it_weight]
 
-    apathetic_reactions = [0.05 + 0.07, 0.72 + 0.10, 0.05 + 0.07, 0.05 + 0.01]
-    there_is_something_to_it_reactions = [0.12 + 0.37, 0.11 + 0.25, 0.02 + 0.14]
+    apathetic_reactions = [0.05, 0.07, 0.10, 0.72, 0.05, 0.01]
+    there_is_something_to_it_reactions = [0.12, 0.37, 0.25, 0.11, 0.14, 0.02]
 
-    apathetic_conversion_chance = apathetic_reactions[0] + apathetic_reactions[1] / 2
-    there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[0] + \
-                                                 there_is_something_to_it_reactions[1] / 2
+    apathetic_conversion_chance = apathetic_reactions[-1] \
+                                  # + apathetic_reactions[1] / 2
+
+    there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[-1]  \
+                                                # + there_is_something_to_it_reactions[1] / 2
 
     conversion_chances = [apathetic_conversion_chance, there_is_something_to_it_conversion_chance]
 
@@ -280,14 +287,18 @@ def get_supporter_to_spreader_conversion_chance():
 
     weights = [weak_covid_supporter_weight, weak_migration_supporter_weight, strong_supporter_weight]
 
-    weak_covid_supporter_reactions = [0.08 + 0.10, 0.30 + 0.18, 0.23 + 0.13]
-    weak_migration_supporter_reactions = [0.28 + 0.16, 0.16 + 0.08, 0.16 + 0.16]
-    strong_supporter_reactions = [0.02 + 0.06, 0.09 + 0.14, 0.50 + 0.19]
+    weak_covid_supporter_reactions = [0.08, 0.10, 0.18, 0.30, 0.23, 0.13]
+    weak_migration_supporter_reactions = [0.28, 0.16, 0.16, 0.08, 0.16, 0.16]
+    strong_supporter_reactions = [0.02, 0.06, 0.14, 0.09, 0.19, 0.50]
 
-    weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[0] + weak_covid_supporter_reactions[1] / 2
-    weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[0] + weak_migration_supporter_reactions[1] / 2
+    weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[-1] \
+                                             # + weak_covid_supporter_reactions[1] / 2
 
-    strong_supporter_conversion_chance = strong_supporter_reactions[0] + strong_supporter_reactions[1] / 2
+    weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[-1] \
+                                                 # + weak_migration_supporter_reactions[1] / 2
+
+    strong_supporter_conversion_chance = strong_supporter_reactions[-1] \
+                                         # + strong_supporter_reactions[1] / 2
 
     conversion_chances = [weak_covid_supporter_conversion_chance,
                           weak_migration_supporter_conversion_chance,
