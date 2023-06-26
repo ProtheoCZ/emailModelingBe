@@ -1,4 +1,5 @@
 import os
+from statistics import median
 
 import networkx as nx
 import json
@@ -79,6 +80,8 @@ def get_tree_stats(graph, root, is_hub_start):
                 "is_hub_start": int(is_hub_start),
                 "avg_path_length": path_lengths["avg_path_length"],
                 "avg_path_length_from_root": path_lengths["avg_path_length_from_start"],
+                "avg_median_path_length": path_lengths["avg_median_path_length"],
+                "avg_median_path_length_from_root": path_lengths["avg_median_path_length_from_start"],
                 "diameter": path_lengths["diameter"],
                 "width": width,
             },
@@ -165,6 +168,8 @@ def get_graph_stats(graph, graph_with_group_reply, start_node_id):
                 "avg_neighbors": avg_neighbors,
                 "avg_path_length": path_lengths["avg_path_length"],
                 "avg_path_length_from_start": path_lengths["avg_path_length_from_start"],
+                "avg_median_path_length": path_lengths["avg_median_path_length"],
+                "avg_median_path_length_from_start": path_lengths["avg_median_path_length_from_start"],
                 "diameter": path_lengths["diameter"]
             }
         }
@@ -215,6 +220,8 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
         "max_depth": 0,
         "avg_path_length": 0,
         "avg_path_length_from_root": 0,
+        "avg_median_path_length": 0,
+        "avg_median_path_length_from_root": 0,
         "avg_diameter": 0,
         "avg_width": 0,
     }
@@ -230,7 +237,10 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
         "max_node_count": 0,
         "avg_path_length": 0,
         "avg_path_length_from_start": 0,
+        "avg_median_path_length": 0,
+        "avg_median_path_length_from_start": 0,
         "avg_diameter": 0,
+
     }
 
     max_graph_node_count = 0
@@ -254,6 +264,8 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
                     sum_tree_result["avg_max_children"] += tree_run["max_children"]
                     sum_tree_result["avg_path_length"] += tree_run["avg_path_length"]
                     sum_tree_result["avg_path_length_from_root"] += tree_run["avg_path_length_from_root"]
+                    sum_tree_result["avg_median_path_length"] += tree_run["avg_median_path_length"]
+                    sum_tree_result["avg_median_path_length_from_root"] += tree_run["avg_median_path_length_from_root"]
                     sum_tree_result["avg_diameter"] += tree_run["diameter"]
                     sum_tree_result["avg_width"] += tree_run["width"]
                     for key in tree_run["children_counts"]:
@@ -285,6 +297,8 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
             sum_graph_result["avg_path_length"] += graph_run["avg_path_length"]
             sum_graph_result["avg_path_length_from_start"] += graph_run["avg_path_length_from_start"]
             sum_graph_result["avg_diameter"] += graph_run["diameter"]
+            sum_graph_result["avg_median_path_length"] += graph_run["avg_median_path_length"]
+            sum_graph_result["avg_median_path_length_from_start"] += graph_run["avg_median_path_length_from_start"]
 
             if graph_node_count > critical_len:
                 runs_over_critical_len.append(file_json["run_id"])
@@ -328,6 +342,8 @@ def get_avg_graph_stats(sum_graph_result):
     sum_graph_result["avg_path_length"] = sum_graph_result["avg_path_length"] / run_count
     sum_graph_result["avg_path_length_from_start"] = sum_graph_result["avg_path_length_from_start"] / run_count
     sum_graph_result["avg_diameter"] = sum_graph_result["avg_diameter"] / run_count
+    sum_graph_result["avg_median_path_length"] = sum_graph_result["avg_median_path_length"] / run_count
+    sum_graph_result["avg_median_path_length_from_start"] = sum_graph_result["avg_median_path_length_from_start"] / run_count
 
     return sum_graph_result
 
@@ -344,6 +360,8 @@ def get_avg_tree_stats(sum_result):
         sum_result["avg_path_length"] = sum_result["avg_path_length"] / tree_count
         sum_result["avg_path_length_from_root"] = sum_result["avg_path_length_from_root"] / tree_count
         sum_result["avg_diameter"] = sum_result["avg_diameter"] / tree_count
+        sum_result["avg_median_path_length"] = sum_result["avg_median_path_length"] / tree_count
+        sum_result["avg_median_path_length_from_root"] = sum_result["avg_median_path_length_from_root"] / tree_count
         sum_result["avg_width"] = sum_result["avg_width"] / tree_count
 
     for key in sum_result["avg_children_counts"]:
@@ -359,11 +377,16 @@ def get_node_distances(graph, start_node_id):
     avg_dist = 0
     avg_dist_from_start = 0
     diameter = 0
+    median_dist = 0
+    median_start_dist = 0
+
     if graph is not None:
         avg_dist_from_start = 0
         avg_dist = 0
         node_count = nx.number_of_nodes(graph)
         diameter = 0
+        distances = []
+        start_node_distances = []
         if node_count > 1:
             for node in graph.nodes:
                 shortest_path_lengths = nx.shortest_path_length(graph, source=node)
@@ -371,16 +394,25 @@ def get_node_distances(graph, start_node_id):
                 for key, length in shortest_path_lengths.items():
                     node_avg_dist += length
                     diameter = max(diameter, length)
+                    if length > 0:
+                        distances.append(length)
+                    if node == start_node_id:
+                        start_node_distances.append(length)
+
                 node_avg_dist = node_avg_dist / (node_count - 1)
                 avg_dist += node_avg_dist
 
                 if node == start_node_id:
                     avg_dist_from_start = node_avg_dist
 
+            median_dist = median(distances)
+            median_start_dist = median(start_node_distances)
             avg_dist = avg_dist / node_count
 
     return {"avg_path_length": avg_dist,
             "avg_path_length_from_start": avg_dist_from_start,
+            "avg_median_path_length": median_dist,
+            "avg_median_path_length_from_start": median_start_dist,
             "diameter": diameter}
 
 

@@ -6,7 +6,7 @@ from ..utils import StatsProvider as Sp
 
 NODE_COLOR = 'rgb(255,0,0)'
 SIZE = 4
-NUMBER_OF_GENERATIONS = 100
+NUMBER_OF_GENERATIONS = 10000
 children_probabilities = (0.0246, 0.9525, 0.0217, 0.0012)
 
 
@@ -33,9 +33,10 @@ def generate_tree(probabilities=children_probabilities):
     )
     current_generation = [graph.nodes[current_node_id]]
     current_node_id += 1
-
+    i = 0
     number_of_branches = 0
-    for i in range(NUMBER_OF_GENERATIONS):
+    while len(current_generation) > 0 and i <= NUMBER_OF_GENERATIONS:
+        i += 1
         next_generation = []
         for index, node in enumerate(current_generation):
             number_of_children = int(random.choices(children, weights=probabilities, k=1)[0])
