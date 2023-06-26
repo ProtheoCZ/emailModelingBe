@@ -69,11 +69,18 @@ def get_tree_stats(graph, root, is_hub_start):
                 }
             }
 
+        path_lengths = get_node_distances(graph, root)
+        width = get_tree_width(graph, root)
+
         result_stats = {
             "tree_result_stats": {
                 "is_tree": int(is_tree),
                 "node_count": node_count,
-                "is_hub_start": int(is_hub_start)
+                "is_hub_start": int(is_hub_start),
+                "avg_path_length": path_lengths["avg_path_length"],
+                "avg_path_length_from_root": path_lengths["avg_path_length_from_start"],
+                "diameter": path_lengths["diameter"],
+                "width": width,
             },
         }
 
@@ -98,7 +105,7 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph
             }
         }
 
-    graph_stats = get_graph_stats(graph, graph_with_group_reply)
+    graph_stats = get_graph_stats(graph, graph_with_group_reply, root)
     run_result = {**metadata, **run_tree_result, **graph_stats}
     run_diff = 6 - len(str(run_id))
     sim_diff = 3 - len(str(sim_id))
@@ -115,7 +122,7 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph
         json.dump(run_result, json_file)
 
 
-def get_graph_stats(graph, graph_with_group_reply):
+def get_graph_stats(graph, graph_with_group_reply, start_node_id):
     if isinstance(graph, nx.Graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0
@@ -146,6 +153,8 @@ def get_graph_stats(graph, graph_with_group_reply):
                 if graph_with_group_reply.nodes[node]['displayed_color'] == Gt.GROUP_REPLY_COLOR:
                     group_reply_node_count += 1
 
+        path_lengths = get_node_distances(graph, start_node_id)
+
         ret_dict = {
             "full_graph_stats": {
                 "node_count": node_count,
@@ -153,7 +162,10 @@ def get_graph_stats(graph, graph_with_group_reply):
                 "response_nodes": response_nodes,
                 "hub_count": hub_count,
                 "group_reply_node_count": group_reply_node_count,
-                "avg_neighbors": avg_neighbors
+                "avg_neighbors": avg_neighbors,
+                "avg_path_length": path_lengths["avg_path_length"],
+                "avg_path_length_from_start": path_lengths["avg_path_length_from_start"],
+                "diameter": path_lengths["diameter"]
             }
         }
 
@@ -200,7 +212,11 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
         "avg_depth": 0,
         "avg_max_children": 0,
         "max_node_count": 0,
-        "max_depth": 0
+        "max_depth": 0,
+        "avg_path_length": 0,
+        "avg_path_length_from_root": 0,
+        "avg_diameter": 0,
+        "avg_width": 0,
     }
 
     sum_graph_result = {
@@ -211,7 +227,10 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
         "avg_group_reply_nodes": 0,
         "avg_hub_count": 0,
         "avg_neighbors": 0,
-        "max_node_count": 0
+        "max_node_count": 0,
+        "avg_path_length": 0,
+        "avg_path_length_from_start": 0,
+        "avg_diameter": 0,
     }
 
     max_graph_node_count = 0
@@ -233,6 +252,10 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
                     sum_tree_result["avg_depth"] += depth
                     max_depth = max(max_depth, depth)
                     sum_tree_result["avg_max_children"] += tree_run["max_children"]
+                    sum_tree_result["avg_path_length"] += tree_run["avg_path_length"]
+                    sum_tree_result["avg_path_length_from_root"] += tree_run["avg_path_length_from_root"]
+                    sum_tree_result["avg_diameter"] += tree_run["diameter"]
+                    sum_tree_result["avg_width"] += tree_run["width"]
                     for key in tree_run["children_counts"]:
                         sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
@@ -259,6 +282,9 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
             sum_graph_result["avg_group_reply_nodes"] += graph_run["group_reply_node_count"]
             sum_graph_result["avg_hub_count"] += graph_run["hub_count"]
             sum_graph_result["avg_neighbors"] += graph_run["avg_neighbors"]
+            sum_graph_result["avg_path_length"] += graph_run["avg_path_length"]
+            sum_graph_result["avg_path_length_from_start"] += graph_run["avg_path_length_from_start"]
+            sum_graph_result["avg_diameter"] += graph_run["diameter"]
 
             if graph_node_count > critical_len:
                 runs_over_critical_len.append(file_json["run_id"])
@@ -299,6 +325,9 @@ def get_avg_graph_stats(sum_graph_result):
     sum_graph_result["avg_group_reply_nodes"] = sum_graph_result["avg_group_reply_nodes"] / run_count
     sum_graph_result["avg_hub_count"] = sum_graph_result["avg_hub_count"] / run_count
     sum_graph_result["avg_neighbors"] = sum_graph_result["avg_neighbors"] / run_count
+    sum_graph_result["avg_path_length"] = sum_graph_result["avg_path_length"] / run_count
+    sum_graph_result["avg_path_length_from_start"] = sum_graph_result["avg_path_length_from_start"] / run_count
+    sum_graph_result["avg_diameter"] = sum_graph_result["avg_diameter"] / run_count
 
     return sum_graph_result
 
@@ -312,6 +341,10 @@ def get_avg_tree_stats(sum_result):
         sum_result["avg_depth"] = sum_result["avg_depth"] / tree_count
         sum_result["avg_max_children"] = sum_result["avg_max_children"] / tree_count
         sum_result["avg_node_count"] = sum_result["avg_node_count"] / tree_count
+        sum_result["avg_path_length"] = sum_result["avg_path_length"] / tree_count
+        sum_result["avg_path_length_from_root"] = sum_result["avg_path_length_from_root"] / tree_count
+        sum_result["avg_diameter"] = sum_result["avg_diameter"] / tree_count
+        sum_result["avg_width"] = sum_result["avg_width"] / tree_count
 
     for key in sum_result["avg_children_counts"]:
         sum_result["avg_children_counts"][key] = sum_result["avg_children_counts"][key] / run_count
@@ -320,3 +353,51 @@ def get_avg_tree_stats(sum_result):
         sum_result["avg_triangles"] = sum_result["avg_triangles"] / non_tree_count
 
     return sum_result
+
+
+def get_node_distances(graph, start_node_id):
+    avg_dist = 0
+    avg_dist_from_start = 0
+    diameter = 0
+    if graph is not None:
+        avg_dist_from_start = 0
+        avg_dist = 0
+        node_count = nx.number_of_nodes(graph)
+        diameter = 0
+        if node_count > 1:
+            for node in graph.nodes:
+                shortest_path_lengths = nx.shortest_path_length(graph, source=node)
+                node_avg_dist = 0
+                for key, length in shortest_path_lengths.items():
+                    node_avg_dist += length
+                    diameter = max(diameter, length)
+                node_avg_dist = node_avg_dist / (node_count - 1)
+                avg_dist += node_avg_dist
+
+                if node == start_node_id:
+                    avg_dist_from_start = node_avg_dist
+
+            avg_dist = avg_dist / node_count
+
+    return {"avg_path_length": avg_dist,
+            "avg_path_length_from_start": avg_dist_from_start,
+            "diameter": diameter}
+
+
+def get_tree_width(tree, root):
+    if tree is None:
+        return 0
+
+    depths = {}
+
+    for node in tree.nodes:
+        node_depth = nx.shortest_path_length(tree, source=root, target=node)
+        if node_depth not in depths:
+            depths[node_depth] = 1
+        else:
+            depths[node_depth] += 1
+
+    return max(depths.values())
+
+
+

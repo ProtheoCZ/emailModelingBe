@@ -6,7 +6,6 @@ import networkx as nx
 from ..utils import GraphTools as Gt
 from ..utils import StatsProvider as Sp
 
-
 SPREADER = 'spreader'
 STIFLER = 'stifler'
 IGNORANT = 'ignorant'
@@ -70,11 +69,16 @@ def json_to_nx(json_graph):
     return graph
 
 
-def rumor_spread(graph, is_hub_start: bool = False, cessation_chance=0.5, spreader_to_stifler_chance=0.5):
-    if is_hub_start:
-        start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
-    else:
-        start_node_id = random.sample(graph.nodes, 1)[0]
+def rumor_spread(graph,
+                 is_hub_start: bool = False,
+                 cessation_chance=0.5,
+                 spreader_to_stifler_chance=0.5,
+                 start_node_id=None):
+    if start_node_id is None:
+        if is_hub_start:
+            start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+        else:
+            start_node_id = random.sample(graph.nodes, 1)[0]
 
     ret_graph = nx.Graph()
     start_node = graph.nodes[start_node_id]
@@ -203,15 +207,23 @@ def run_full_rumor_spread(graph_name,
         spreader_to_stifler_runs = int(round((1 / spreader_to_stifler_increase) + 1))
 
         run_number = 1
+        if is_hub_start:
+            start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+        else:
+            start_node_id = random.sample(graph.nodes, 1)[0]
 
         for i in range(run_count):
             for j in range(cessation_runs):
                 for k in range(spreader_to_stifler_runs):
-                    graphs = rumor_spread(graph.copy(), is_hub_start, cessation_chance, spreader_to_stifler_chance)
+                    graphs = rumor_spread(graph.copy(),
+                                          is_hub_start,
+                                          cessation_chance,
+                                          spreader_to_stifler_chance,
+                                          start_node_id)
 
                     if export_stats:
                         Sp.get_stats(None,
-                                     0,
+                                     start_node_id,
                                      graph_name,
                                      is_hub_start,
                                      run_number,
@@ -219,7 +231,8 @@ def run_full_rumor_spread(graph_name,
                                      graphs[1]
                                      )
 
-                    print("run #" + str(run_number) + " of " + str(run_count*cessation_runs*spreader_to_stifler_runs))
+                    print(
+                        "run #" + str(run_number) + " of " + str(run_count * cessation_runs * spreader_to_stifler_runs))
                     spreader_to_stifler_chance += spreader_to_stifler_increase
                     run_number += 1
                 cessation_chance += cessation_increase
@@ -245,13 +258,13 @@ def get_opponent_to_spreader_conversion_chance():
     weak_opponent_reactions = [0.29, 0.18, 0.11, 0.34, 0.08, 0.00]
 
     strong_opponent_conversion_chance = strong_opponent_reactions[-1] \
-                                        # + strong_opponent_reactions[1] / 2
+        # + strong_opponent_reactions[1] / 2
 
-    average_opponent_conversion_chance = average_opponent_reactions[-1]\
-                                         # + average_opponent_reactions[1] / 2
+    average_opponent_conversion_chance = average_opponent_reactions[-1] \
+        # + average_opponent_reactions[1] / 2
 
     weak_opponent_conversion_chance = weak_opponent_reactions[-1] \
-                                      # + weak_opponent_reactions[1] / 2
+        # + weak_opponent_reactions[1] / 2
 
     conversion_chances = [strong_opponent_conversion_chance,
                           average_opponent_conversion_chance,
@@ -270,10 +283,10 @@ def get_neutral_to_spreader_conversion_chance():
     there_is_something_to_it_reactions = [0.12, 0.37, 0.25, 0.11, 0.14, 0.02]
 
     apathetic_conversion_chance = apathetic_reactions[-1] \
-                                  # + apathetic_reactions[1] / 2
+        # + apathetic_reactions[1] / 2
 
-    there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[-1]  \
-                                                # + there_is_something_to_it_reactions[1] / 2
+    there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[-1] \
+        # + there_is_something_to_it_reactions[1] / 2
 
     conversion_chances = [apathetic_conversion_chance, there_is_something_to_it_conversion_chance]
 
@@ -292,13 +305,13 @@ def get_supporter_to_spreader_conversion_chance():
     strong_supporter_reactions = [0.02, 0.06, 0.14, 0.09, 0.19, 0.50]
 
     weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[-1] \
-                                             # + weak_covid_supporter_reactions[1] / 2
+        # + weak_covid_supporter_reactions[1] / 2
 
     weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[-1] \
-                                                 # + weak_migration_supporter_reactions[1] / 2
+        # + weak_migration_supporter_reactions[1] / 2
 
     strong_supporter_conversion_chance = strong_supporter_reactions[-1] \
-                                         # + strong_supporter_reactions[1] / 2
+        # + strong_supporter_reactions[1] / 2
 
     conversion_chances = [weak_covid_supporter_conversion_chance,
                           weak_migration_supporter_conversion_chance,
