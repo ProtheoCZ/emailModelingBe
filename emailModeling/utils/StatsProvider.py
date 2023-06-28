@@ -6,10 +6,19 @@ import json
 from ..utils import GraphTools as Gt
 
 RECORDED_CHILDREN_COUNT = 10
-FULL_SIM_DIR = 'fullSimStats'
+# FULL_SIM_DIR = 'fullSimStats'
+
 # POST_COLOR = 'rgb(0,255,0)'
 # RESPONSE_COLOR = 'rgb(0,0,255)'
 # START_COLOR = 'rgb(242,245,66)'
+
+
+def get_full_sim_dir_name(config_path):
+    with open(config_path) as config_file:
+        return config_file.readline()
+
+
+FULL_SIM_DIR = get_full_sim_dir_name('c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/FULL_SIM_DIR.txt')
 
 
 def get_children_stats(graph, root):
@@ -430,6 +439,7 @@ def get_tree_width(tree, root):
             depths[node_depth] += 1
 
     return max(depths.values())
+
 
 
 

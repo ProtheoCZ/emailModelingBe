@@ -1,3 +1,4 @@
+import json
 import os
 import random
 
@@ -16,7 +17,7 @@ SUPPORTER = 'supporter'
 
 # When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
 # Whenever a spreader contacts an ignorant, the ignorant becomes a spreader at a rate lambda.
-# individuals may also cease spreading a rumour spontaneously (i.e., without the need for any contact) at a rate d
+# Individuals may also cease spreading a rumour spontaneously (i.e., without the need for any contact) at a rate delta.
 
 
 def simulate_rumor_spread(graph_name):
@@ -114,10 +115,13 @@ def rumor_spread(graph,
                     convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
                     current_edge_id += 1
                 elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                    alfa_chance = spreader_to_stifler_chance
-                    if random.random() < alfa_chance:
+                    if random.random() < spreader_to_stifler_chance:
                         graph.nodes[current_node_id]['rumor_group'] = STIFLER
                         ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
+                        break
+
+                    elif neighbor_rumor_group == SPREADER:
+                        queue.append((current_node_id, neighbor))
 
     assign_visual_colors(graph)
     assign_visual_colors(ret_graph)
@@ -188,9 +192,11 @@ def convert_ignorant(current_node_id, neighbor_id, graph, queue, ret_graph, curr
 def run_full_rumor_spread(graph_name,
                           run_count,
                           is_hub_start: bool,
-                          spreader_to_stifler_increase=0.25,
-                          cessation_increase=0.25,
-                          export_stats=True):
+                          spreader_to_stifler_increase=0,
+                          cessation_increase=0,
+                          export_stats=True,
+                          initial_cessation_chance=0,
+                          initial_spreader_to_stifler_chance=0):
     json_graph = Gt.json_loader(graph_name)
 
     if isGraphCompatible(json_graph):
@@ -200,21 +206,24 @@ def run_full_rumor_spread(graph_name,
 
         graph = json_to_nx(json_graph)
 
-        cessation_chance = 0
-        spreader_to_stifler_chance = 0
+        cessation_chance = initial_cessation_chance
+        spreader_to_stifler_chance = initial_spreader_to_stifler_chance
 
-        cessation_runs = int(round((1 / cessation_increase) + 1))
-        spreader_to_stifler_runs = int(round((1 / spreader_to_stifler_increase) + 1))
+        # cessation_runs = int(round((1 / cessation_increase) + 1))
+        cessation_runs = 10
+        # spreader_to_stifler_runs = int(round((1 / spreader_to_stifler_increase) + 1))
+        spreader_to_stifler_runs = 10
 
         run_number = 1
-        if is_hub_start:
-            start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
-        else:
-            start_node_id = random.sample(graph.nodes, 1)[0]
+
 
         for i in range(run_count):
             for j in range(cessation_runs):
                 for k in range(spreader_to_stifler_runs):
+                    if is_hub_start:
+                        start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+                    else:
+                        start_node_id = random.sample(graph.nodes, 1)[0]
                     graphs = rumor_spread(graph.copy(),
                                           is_hub_start,
                                           cessation_chance,
@@ -243,6 +252,53 @@ def run_full_rumor_spread(graph_name,
         print("Graph is not compatible with the model")
 
 
+def get_run_params(config_path):
+    with open(config_path) as config_file:
+        json_file = json.load(config_file)
+        cessation_runs = round((json_file["cessation_stop"] - json_file["cessation_start"])/0.1) + 1
+        spreader_to_stifler_runs = round((json_file["spreader_to_stifler_stop"] - json_file["spreader_to_stifler_start"])/0.1) + 1
+
+        return {"cessation_start": json_file["cessation_start"],
+                "cessation_runs": cessation_runs,
+                "spreader_to_stifler_start": json_file["spreader_to_stifler_start"],
+                "spreader_to_stifler_runs": spreader_to_stifler_runs}
+
+
+def run_full_rumor_spread_with_param_scaling(graph_name,
+                                             run_count,
+                                             is_hub_start: bool
+                                             ):
+
+
+    # cessation_chance = 0
+    # spreader_to_stifler_chance = 0
+    run_params = get_run_params('c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/rumour_spread_limits.json')
+
+    cessation_chance = run_params["cessation_start"]
+    spreader_to_stifler_chance = run_params["spreader_to_stifler_start"]
+
+    cessation_increase = 0.1
+    spreader_to_stifler_increase = 0.1
+
+    # cessation_runs = int(1/cessation_increase) + 1
+    # spreader_to_stifler_runs = int(1/spreader_to_stifler_increase) + 1
+
+    cessation_runs = run_params["cessation_runs"]
+    spreader_to_stifler_runs = run_params["spreader_to_stifler_runs"]
+
+    for i in range(cessation_runs):
+        for j in range(spreader_to_stifler_runs):
+            run_full_rumor_spread(graph_name,
+                                  run_count,
+                                  is_hub_start,
+                                  initial_cessation_chance=cessation_chance,
+                                  initial_spreader_to_stifler_chance=spreader_to_stifler_chance,
+                                  )
+
+            spreader_to_stifler_chance += spreader_to_stifler_increase
+        cessation_chance += cessation_increase
+
+
 # source of reaction numbers
 # https://web.archive.org/web/20230621082805/https://www.irozhlas.cz/zpravy-domov/spolecnost-neduvery-serial-dezinformace-vyzkum-skupiny-seznam_2306120500_pik
 
@@ -258,13 +314,13 @@ def get_opponent_to_spreader_conversion_chance():
     weak_opponent_reactions = [0.29, 0.18, 0.11, 0.34, 0.08, 0.00]
 
     strong_opponent_conversion_chance = strong_opponent_reactions[-1] \
-        # + strong_opponent_reactions[1] / 2
+        + strong_opponent_reactions[-2]/2
 
     average_opponent_conversion_chance = average_opponent_reactions[-1] \
-        # + average_opponent_reactions[1] / 2
+        + average_opponent_reactions[-2]/2
 
     weak_opponent_conversion_chance = weak_opponent_reactions[-1] \
-        # + weak_opponent_reactions[1] / 2
+        + weak_opponent_reactions[-2]/2
 
     conversion_chances = [strong_opponent_conversion_chance,
                           average_opponent_conversion_chance,
@@ -283,10 +339,10 @@ def get_neutral_to_spreader_conversion_chance():
     there_is_something_to_it_reactions = [0.12, 0.37, 0.25, 0.11, 0.14, 0.02]
 
     apathetic_conversion_chance = apathetic_reactions[-1] \
-        # + apathetic_reactions[1] / 2
+        + apathetic_reactions[-2]/2
 
     there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[-1] \
-        # + there_is_something_to_it_reactions[1] / 2
+        + there_is_something_to_it_reactions[-2]/2
 
     conversion_chances = [apathetic_conversion_chance, there_is_something_to_it_conversion_chance]
 
@@ -305,13 +361,13 @@ def get_supporter_to_spreader_conversion_chance():
     strong_supporter_reactions = [0.02, 0.06, 0.14, 0.09, 0.19, 0.50]
 
     weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[-1] \
-        # + weak_covid_supporter_reactions[1] / 2
+        + weak_covid_supporter_reactions[-2]/2
 
     weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[-1] \
-        # + weak_migration_supporter_reactions[1] / 2
+        + weak_migration_supporter_reactions[-2]/2
 
     strong_supporter_conversion_chance = strong_supporter_reactions[-1] \
-        # + strong_supporter_reactions[1] / 2
+        + strong_supporter_reactions[-2]/2
 
     conversion_chances = [weak_covid_supporter_conversion_chance,
                           weak_migration_supporter_conversion_chance,

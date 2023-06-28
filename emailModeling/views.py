@@ -3,7 +3,10 @@ import os
 from .algorithms.GraphProcessor import GraphProcessor
 from .algorithms.Relatability import simulate_relatability, run_full_relatability
 from .algorithms.G_W_algorithm import full_gw_sim
-from .algorithms.rumor_spread import simulate_rumor_spread, run_full_rumor_spread
+from .algorithms.rumor_spread import \
+    simulate_rumor_spread,\
+    run_full_rumor_spread,\
+    run_full_rumor_spread_with_param_scaling
 
 from django.http import JsonResponse
 
@@ -71,7 +74,7 @@ def get_full_relatability_sim(request):
 
 @csrf_exempt
 def get_full_gw_sim(request):
-    full_gw_sim(10000)
+    full_gw_sim(1000)
     return JsonResponse({"graphs": [], "compatible": 1})
 
 
@@ -87,4 +90,11 @@ def get_rumor_sim(request):
 def get_full_rumor_sim(request):
     if len(request.body.decode('utf-8')) > 0:
         run_full_rumor_spread(request.body.decode('utf-8'), 2, False)
+    return JsonResponse({"graphs": [], "compatible": 1})
+
+
+@csrf_exempt
+def get_full_rumor_sim2(request):
+    if len(request.body.decode('utf-8')) > 0:
+        run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 1, False)
     return JsonResponse({"graphs": [], "compatible": 1})
