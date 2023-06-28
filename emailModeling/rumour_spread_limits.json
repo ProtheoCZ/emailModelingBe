@@ -1,6 +1,6 @@
 {
-"cessation_start":0.1,
+"cessation_start":0.5,
 "cessation_stop":1.0,
-"spreader_to_stifler_start":0.1,
+"spreader_to_stifler_start":0.5,
 "spreader_to_stifler_stop":1
 }

@@ -106,22 +106,20 @@ def rumor_spread(graph,
     while len(queue) > 0:
         current_node_pair = queue.pop(0)
         current_node_id = current_node_pair[1]
+        if graph.nodes[current_node_id]['rumor_group'] == SPREADER:
+            for neighbor in graph.neighbors(current_node_id):
+                neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
+                if random.random() > cessation_chance:
+                    if neighbor_rumor_group == IGNORANT:
+                        convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
+                        current_edge_id += 1
+                    elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
+                        if random.random() < spreader_to_stifler_chance:
+                            graph.nodes[current_node_id]['rumor_group'] = STIFLER
+                            ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
 
-        for neighbor in graph.neighbors(current_node_id):
-            neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
-
-            if random.random() > cessation_chance:
-                if neighbor_rumor_group == IGNORANT:
-                    convert_ignorant(current_node_id, neighbor, graph, queue, ret_graph, current_edge_id)
-                    current_edge_id += 1
-                elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                    if random.random() < spreader_to_stifler_chance:
-                        graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                        ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                        break
-
-                    elif neighbor_rumor_group == SPREADER:
-                        queue.append((current_node_id, neighbor))
+                        elif neighbor_rumor_group == SPREADER:
+                            queue.append((current_node_id, neighbor))
 
     assign_visual_colors(graph)
     assign_visual_colors(ret_graph)
@@ -314,13 +312,13 @@ def get_opponent_to_spreader_conversion_chance():
     weak_opponent_reactions = [0.29, 0.18, 0.11, 0.34, 0.08, 0.00]
 
     strong_opponent_conversion_chance = strong_opponent_reactions[-1] \
-        + strong_opponent_reactions[-2]/2
+        # + strong_opponent_reactions[-2]/2
 
     average_opponent_conversion_chance = average_opponent_reactions[-1] \
-        + average_opponent_reactions[-2]/2
+        # + average_opponent_reactions[-2]/2
 
     weak_opponent_conversion_chance = weak_opponent_reactions[-1] \
-        + weak_opponent_reactions[-2]/2
+        # + weak_opponent_reactions[-2]/2
 
     conversion_chances = [strong_opponent_conversion_chance,
                           average_opponent_conversion_chance,
@@ -339,10 +337,10 @@ def get_neutral_to_spreader_conversion_chance():
     there_is_something_to_it_reactions = [0.12, 0.37, 0.25, 0.11, 0.14, 0.02]
 
     apathetic_conversion_chance = apathetic_reactions[-1] \
-        + apathetic_reactions[-2]/2
+        # + apathetic_reactions[-2]/2
 
     there_is_something_to_it_conversion_chance = there_is_something_to_it_reactions[-1] \
-        + there_is_something_to_it_reactions[-2]/2
+        # + there_is_something_to_it_reactions[-2]/2
 
     conversion_chances = [apathetic_conversion_chance, there_is_something_to_it_conversion_chance]
 
@@ -361,13 +359,13 @@ def get_supporter_to_spreader_conversion_chance():
     strong_supporter_reactions = [0.02, 0.06, 0.14, 0.09, 0.19, 0.50]
 
     weak_covid_supporter_conversion_chance = weak_covid_supporter_reactions[-1] \
-        + weak_covid_supporter_reactions[-2]/2
+        # + weak_covid_supporter_reactions[-2]/2
 
     weak_migration_supporter_conversion_chance = weak_migration_supporter_reactions[-1] \
-        + weak_migration_supporter_reactions[-2]/2
+        # + weak_migration_supporter_reactions[-2]/2
 
     strong_supporter_conversion_chance = strong_supporter_reactions[-1] \
-        + strong_supporter_reactions[-2]/2
+        # + strong_supporter_reactions[-2]/2
 
     conversion_chances = [weak_covid_supporter_conversion_chance,
                           weak_migration_supporter_conversion_chance,
