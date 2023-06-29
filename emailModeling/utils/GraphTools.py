@@ -23,6 +23,16 @@ def get_hub_start(graph, n):  # n is the number of neighbors needed to be consid
             return start_node_id
 
 
+def get_largest_hub(graph):
+    max_hub = [None, -1]
+    for node in graph.nodes:
+        neighbors = [n for n in graph.neighbors(node)]
+        if len(neighbors) > max_hub[1]:
+            max_hub = [node, len(neighbors)]
+
+    return max_hub[0]
+
+
 def order_tree(tree, root):
     if isinstance(tree, nx.Graph):
         tree = tree.copy()

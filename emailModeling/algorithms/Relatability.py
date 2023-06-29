@@ -89,7 +89,8 @@ def age_relatability(graph, is_hub_start: bool, with_lnk_coloring=False):
     ret_graph = nx.Graph()
     global start_node_id
     if is_hub_start:
-        start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+        # start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
+        start_node_id = Gt.get_largest_hub(graph)
     else:
         start_node_id = random.sample(graph.nodes, 1)[0]
 

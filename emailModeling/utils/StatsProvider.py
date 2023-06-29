@@ -1,4 +1,5 @@
 import os
+from collections import deque
 from statistics import median
 
 import networkx as nx
@@ -6,6 +7,8 @@ import json
 from ..utils import GraphTools as Gt
 
 RECORDED_CHILDREN_COUNT = 10
+
+
 # FULL_SIM_DIR = 'fullSimStats'
 
 # POST_COLOR = 'rgb(0,255,0)'
@@ -59,7 +62,7 @@ def get_children_stats(graph, root):
     return result_stats
 
 
-def get_tree_stats(graph, root, is_hub_start):
+def get_tree_stats(graph, root, is_hub_start, with_node_distances=False):
     if isinstance(graph, nx.Graph):
         is_tree = nx.is_tree(graph)
         node_count = nx.number_of_nodes(graph)
@@ -78,8 +81,15 @@ def get_tree_stats(graph, root, is_hub_start):
                     "triangles": triangle_count
                 }
             }
-
-        path_lengths = get_node_distances(graph, root)
+        if with_node_distances:
+            path_lengths = get_node_distances(graph, root)
+        else:
+            path_lengths = {"avg_path_length": -1,
+                            "avg_path_length_from_start": -1,
+                            "avg_median_path_length": -1,
+                            "avg_median_path_length_from_start": -1,
+                            "diameter": -1
+                            }
         width = get_tree_width(graph, root)
 
         result_stats = {
@@ -134,7 +144,7 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph
         json.dump(run_result, json_file)
 
 
-def get_graph_stats(graph, graph_with_group_reply, start_node_id):
+def get_graph_stats(graph, graph_with_group_reply, start_node_id, with_node_distances=False):
     if isinstance(graph, nx.Graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0
@@ -165,7 +175,15 @@ def get_graph_stats(graph, graph_with_group_reply, start_node_id):
                 if graph_with_group_reply.nodes[node]['displayed_color'] == Gt.GROUP_REPLY_COLOR:
                     group_reply_node_count += 1
 
-        path_lengths = get_node_distances(graph, start_node_id)
+        if with_node_distances:
+            path_lengths = get_node_distances(graph, start_node_id)
+        else:
+            path_lengths = {"avg_path_length": -1,
+                            "avg_path_length_from_start": -1,
+                            "avg_median_path_length": -1,
+                            "avg_median_path_length_from_start": -1,
+                            "diameter": -1
+                            }
 
         ret_dict = {
             "full_graph_stats": {
@@ -352,7 +370,8 @@ def get_avg_graph_stats(sum_graph_result):
     sum_graph_result["avg_path_length_from_start"] = sum_graph_result["avg_path_length_from_start"] / run_count
     sum_graph_result["avg_diameter"] = sum_graph_result["avg_diameter"] / run_count
     sum_graph_result["avg_median_path_length"] = sum_graph_result["avg_median_path_length"] / run_count
-    sum_graph_result["avg_median_path_length_from_start"] = sum_graph_result["avg_median_path_length_from_start"] / run_count
+    sum_graph_result["avg_median_path_length_from_start"] = sum_graph_result[
+                                                                "avg_median_path_length_from_start"] / run_count
 
     return sum_graph_result
 
@@ -425,21 +444,41 @@ def get_node_distances(graph, start_node_id):
             "diameter": diameter}
 
 
+# def get_tree_width(tree, root):
+#     if tree is None:
+#         return 0
+#
+#     depths = {}
+#
+#     for node in tree.nodes:
+#         node_depth = nx.shortest_path_length(tree, source=root, target=node)
+#         if node_depth not in depths:
+#             depths[node_depth] = 1
+#         else:
+#             depths[node_depth] += 1
+#
+#     return max(depths.values())
+
 def get_tree_width(tree, root):
     if tree is None:
         return 0
 
+    queue = deque([(root, 0)])
     depths = {}
+    visited_nodes = [root]
 
-    for node in tree.nodes:
-        node_depth = nx.shortest_path_length(tree, source=root, target=node)
-        if node_depth not in depths:
-            depths[node_depth] = 1
+    while queue:
+        node, depth = queue.popleft()
+
+        if depth not in depths:
+            depths[depth] = 1
         else:
-            depths[node_depth] += 1
+            depths[depth] += 1
+
+        visited_nodes.append(node)
+
+        for neighbor in tree.neighbors(node):
+            if neighbor not in visited_nodes:
+                queue.append((neighbor, depth + 1))
 
     return max(depths.values())
-
-
-
-

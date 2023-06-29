@@ -100,7 +100,8 @@ class LnkAlg:
 
         if is_hub_start:
             # self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
-            self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
+            # self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
+            self.start_node = self.graph.nodes[Gt.get_largest_hub(self.graph)]
         else:
             self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 

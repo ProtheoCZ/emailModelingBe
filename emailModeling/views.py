@@ -74,7 +74,7 @@ def get_full_relatability_sim(request):
 
 @csrf_exempt
 def get_full_gw_sim(request):
-    full_gw_sim(1000)
+    full_gw_sim(10000)
     return JsonResponse({"graphs": [], "compatible": 1})
 
 
