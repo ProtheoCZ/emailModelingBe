@@ -14,7 +14,7 @@ OPPONENT = 'opponent'
 NEUTRAL = 'neutral'
 SUPPORTER = 'supporter'
 
-TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/Sim_007/'
+TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/All/'
 
 
 # When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
@@ -128,7 +128,7 @@ def rumor_spread(graph,
                     current_edge_id += 1
 
                 elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                    if random.random() < spreader_to_stifler_chance:
+                    if random.random() <= spreader_to_stifler_chance:
                         graph.nodes[current_node_id]['rumor_group'] = STIFLER
                         ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
                         spreaders.remove(current_node_id)
@@ -189,7 +189,7 @@ def convert_ignorant(current_node_id, neighbor_id, graph, spreaders, ret_graph, 
     lambda_chance = get_ignorant_to_spreader_chance(neighbor_node)
     # lambda_chance = 0.3 #todo: remove
 
-    if random.random() < lambda_chance:
+    if random.random() <= lambda_chance:
         neighbor_node['rumor_group'] = SPREADER
         # queue.append((current_node_id, neighbor_id))
         spreaders.add(neighbor_id)
@@ -289,9 +289,9 @@ def run_full_rumor_spread(graph_name,
 def get_run_params(config_path):
     with open(config_path) as config_file:
         json_file = json.load(config_file)
-        cessation_runs = round((json_file["cessation_stop"] - json_file["cessation_start"]) / 0.1) + 1
+        cessation_runs = round((json_file["cessation_stop"] - json_file["cessation_start"]) / 0.02) + 1
         spreader_to_stifler_runs = round(
-            (json_file["spreader_to_stifler_stop"] - json_file["spreader_to_stifler_start"]) / 0.1) + 1
+            (json_file["spreader_to_stifler_stop"] - json_file["spreader_to_stifler_start"]) / 0.02) + 1
 
         return {"cessation_start": json_file["cessation_start"],
                 "cessation_runs": cessation_runs,
@@ -306,13 +306,13 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
     # cessation_chance = 0
     # spreader_to_stifler_chance = 0
     run_params = get_run_params(
-        'c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/rumour_spread_limits.json')
+        'c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/rumour_spread_limits.json') #todo relative path
 
     cessation_chance = run_params["cessation_start"]
     spreader_to_stifler_start_chance = run_params["spreader_to_stifler_start"]
 
-    cessation_increase = 0.1
-    spreader_to_stifler_increase = 0.1
+    cessation_increase = 0.02
+    spreader_to_stifler_increase = 0.02
 
     # cessation_runs = int(1/cessation_increase) + 1
     # spreader_to_stifler_runs = int(1/spreader_to_stifler_increase) + 1
@@ -417,13 +417,13 @@ def get_time_evolution(spreader_lens, stifler_lens, spreader_to_stifler_chance, 
         "max_node_count": node_count
     }
     path_to_max_time_evolution = TIME_EVOLUTION_GRAPH_FOLDER \
-                                 + 'd' + str(round(cessation_chance, 2)).replace('.', '') \
-                                 + 'a' + str(round(spreader_to_stifler_chance, 2)).replace('.', '') \
+                                 + 'd' + str(round(cessation_chance, 3)).replace('.', '') \
+                                 + 'a' + str(round(spreader_to_stifler_chance, 3)).replace('.', '') \
                                  + '_max.json'
 
     path_to_time_evolution = TIME_EVOLUTION_GRAPH_FOLDER \
-                             + 'd' + str(round(cessation_chance, 2)).replace('.', '') \
-                             + 'a' + str(round(spreader_to_stifler_chance, 2)).replace('.', '') \
+                             + 'd' + str(round(cessation_chance, 3)).replace('.', '') \
+                             + 'a' + str(round(spreader_to_stifler_chance, 3)).replace('.', '') \
                              + '.json'
 
     if os.path.exists(path_to_time_evolution):
@@ -528,7 +528,7 @@ def rumor_spread_without_random_activation(graph,
                                                                current_edge_id, spreaders)
                         current_edge_id += 1
                     elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                        if random.random() < spreader_to_stifler_chance:
+                        if random.random() <= spreader_to_stifler_chance:
                             graph.nodes[current_node_id]['rumor_group'] = STIFLER
                             ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
                             stiflers.add(current_node_id)
@@ -564,7 +564,7 @@ def convert_ignorant_without_random_access(current_node_id, neighbor_id, graph, 
 
     lambda_chance = get_ignorant_to_spreader_chance(neighbor_node)
 
-    if random.random() < lambda_chance:
+    if random.random() <= lambda_chance:
         neighbor_node['rumor_group'] = SPREADER
         queue.append((current_node_id, neighbor_id))
 

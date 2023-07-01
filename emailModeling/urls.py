@@ -13,5 +13,6 @@ urlpatterns = [
     path('getFullGwSim/', views.get_full_gw_sim),
     path('getRumorSim/', views.get_rumor_sim),
     path('getFullRumorSim/', views.get_full_rumor_sim),
-    path('getFullRumorSim2/', views.get_full_rumor_sim2)  # todo janky shit
+    path('getFullRumorSim2/', views.get_full_rumor_sim2),  # todo janky shit
+    path('getSummaryStats/', views.get_summary_stats)
    ]

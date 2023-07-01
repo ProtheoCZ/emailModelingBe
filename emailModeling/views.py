@@ -8,6 +8,8 @@ from .algorithms.rumor_spread import \
     run_full_rumor_spread,\
     run_full_rumor_spread_with_param_scaling
 
+from .utils import StatsProvider as Sp
+
 from django.http import JsonResponse
 
 
@@ -97,4 +99,11 @@ def get_full_rumor_sim(request):
 def get_full_rumor_sim2(request):
     if len(request.body.decode('utf-8')) > 0:
         run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 1, False)
+    return JsonResponse({"graphs": [], "compatible": 1})
+
+
+@csrf_exempt
+def get_summary_stats(request):
+    if len(request.body.decode('utf-8')) > 0:
+        Sp.get_summary_stats((request.body.decode('utf-8')), 'gw')
     return JsonResponse({"graphs": [], "compatible": 1})

@@ -4,6 +4,9 @@ from statistics import median
 
 import networkx as nx
 import json
+
+import numpy as np
+
 from ..utils import GraphTools as Gt
 
 RECORDED_CHILDREN_COUNT = 10
@@ -90,7 +93,7 @@ def get_tree_stats(graph, root, is_hub_start, with_node_distances=False):
                             "avg_median_path_length_from_start": -1,
                             "diameter": -1
                             }
-        width = get_tree_width(graph, root)
+        width, median_node_depth = get_tree_width_and_median_node_depth(graph, root)
 
         result_stats = {
             "tree_result_stats": {
@@ -103,6 +106,7 @@ def get_tree_stats(graph, root, is_hub_start, with_node_distances=False):
                 "avg_median_path_length_from_root": path_lengths["avg_median_path_length_from_start"],
                 "diameter": path_lengths["diameter"],
                 "width": width,
+                "median_node_depth": median_node_depth
             },
         }
 
@@ -251,6 +255,7 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
         "avg_median_path_length_from_root": 0,
         "avg_diameter": 0,
         "avg_width": 0,
+        "avg_median_node_depth": 0
     }
 
     sum_graph_result = {
@@ -295,6 +300,7 @@ def get_summary_stats(sim_id, algorithm, critical_len=1000, with_tree: bool = Tr
                     sum_tree_result["avg_median_path_length_from_root"] += tree_run["avg_median_path_length_from_root"]
                     sum_tree_result["avg_diameter"] += tree_run["diameter"]
                     sum_tree_result["avg_width"] += tree_run["width"]
+                    sum_tree_result["avg_median_node_depth"] += tree_run["median_node_depth"]
                     for key in tree_run["children_counts"]:
                         sum_tree_result["avg_children_counts"][key] += tree_run["children_counts"][key]
 
@@ -391,6 +397,7 @@ def get_avg_tree_stats(sum_result):
         sum_result["avg_median_path_length"] = sum_result["avg_median_path_length"] / tree_count
         sum_result["avg_median_path_length_from_root"] = sum_result["avg_median_path_length_from_root"] / tree_count
         sum_result["avg_width"] = sum_result["avg_width"] / tree_count
+        sum_result["avg_median_node_depth"] = sum_result["avg_median_node_depth"] / tree_count
 
     for key in sum_result["avg_children_counts"]:
         sum_result["avg_children_counts"][key] = sum_result["avg_children_counts"][key] / run_count
@@ -444,26 +451,13 @@ def get_node_distances(graph, start_node_id):
             "diameter": diameter}
 
 
-# def get_tree_width(tree, root):
-#     if tree is None:
-#         return 0
-#
-#     depths = {}
-#
-#     for node in tree.nodes:
-#         node_depth = nx.shortest_path_length(tree, source=root, target=node)
-#         if node_depth not in depths:
-#             depths[node_depth] = 1
-#         else:
-#             depths[node_depth] += 1
-#
-#     return max(depths.values())
-
-def get_tree_width(tree, root):
+def get_tree_width_and_median_node_depth(tree, root):
     if tree is None:
         return 0
 
     queue = deque([(root, 0)])
+    node_depths = np.zeros(len(tree.nodes))
+    i = 0
     depths = {}
     visited_nodes = [root]
 
@@ -481,4 +475,9 @@ def get_tree_width(tree, root):
             if neighbor not in visited_nodes:
                 queue.append((neighbor, depth + 1))
 
-    return max(depths.values())
+        node_depths[i] = depth
+        i += 1
+
+    median_node_depth = np.median(node_depths)
+
+    return max(depths.values()), median_node_depth
