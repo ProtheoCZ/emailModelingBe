@@ -5,7 +5,7 @@ import random
 from ..utils import StatsProvider as Sp
 
 NODE_COLOR = 'rgb(255,0,0)'
-SIZE = 4
+SIZE = 2
 NUMBER_OF_GENERATIONS = 10000
 children_probabilities = (0.0246, 0.9525, 0.0217, 0.0012)
 
@@ -47,8 +47,8 @@ def generate_tree(probabilities=children_probabilities):
             for j in range(number_of_children):
                 graph.add_node(
                     current_node_id,
-                    x=index + len(next_generation),
-                    y=i,
+                    x=100*(index + len(next_generation)),
+                    y=100*i,
                     size=SIZE,
                     displayed_color=NODE_COLOR,
                     label=current_node_id,
@@ -66,6 +66,8 @@ def generate_tree(probabilities=children_probabilities):
                 current_node_id += 1
         current_generation = next_generation.copy()
 
+    print(str(nx.number_of_nodes(graph)) + " nodes in tree")
+
     return graph
 
 
@@ -75,6 +77,11 @@ def full_gw_sim(run_count, export_stats=True):
         os.mkdir(Sp.FULL_SIM_DIR + '/Sim_' + str(sim_id))
     for i in range(run_count):
         tree = generate_tree()
+
+        if nx.number_of_nodes(tree) > 15000:
+            nx.write_gexf(tree, 'c:/Users/Tomas/PycharmProjects/emailModelingBe/fullSimData/gw_tree.gexf')
+            print("tree written to file")
+
         Sp.get_stats(tree,
                      1,
                      'Galton-Watson generated tree',

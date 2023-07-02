@@ -364,7 +364,7 @@ def get_children_count_empty_dict():
     return children_dict
 
 
-def get_avg_graph_stats(sum_graph_result):
+def get_avg_graph_stats(sum_graph_result): #todo rewrite as cycle
     run_count = sum_graph_result["run_count"]
     sum_graph_result["avg_node_count"] = sum_graph_result["avg_node_count"] / run_count
     sum_graph_result["avg_post_nodes"] = sum_graph_result["avg_post_nodes"] / run_count
