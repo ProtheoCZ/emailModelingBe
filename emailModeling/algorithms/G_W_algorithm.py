@@ -78,10 +78,6 @@ def full_gw_sim(run_count, export_stats=True):
     for i in range(run_count):
         tree = generate_tree()
 
-        if nx.number_of_nodes(tree) > 15000:
-            nx.write_gexf(tree, 'c:/Users/Tomas/PycharmProjects/emailModelingBe/fullSimData/gw_tree.gexf')
-            print("tree written to file")
-
         Sp.get_stats(tree,
                      1,
                      'Galton-Watson generated tree',
