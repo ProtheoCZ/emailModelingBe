@@ -37,7 +37,6 @@ def get_list_of_available_graphs(request):  # GET
 def get_coloring_process(request):  # POST
     if len(request.body.decode('utf-8')) > 0:
         processor = GraphProcessor(request.body.decode('utf-8'))
-        # return JsonResponse(processor.process_graph())
         return JsonResponse(processor.process_graph_lnk())
     else:
         return JsonResponse({"graphs": [], "compatible": 1})

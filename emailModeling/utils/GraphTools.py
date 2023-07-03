@@ -5,9 +5,9 @@ import networkx as nx
 
 
 HUB_THRESHOLD = 50
-POST_COLOR = 'rgb(0,255,0)'
+POST_COLOR = 'rgb(255,0,0)'
 RESPONSE_COLOR = 'rgb(0,0,255)'
-START_COLOR = 'rgb(242,245,66)'
+START_COLOR = 'rgb(0,128,0)'
 RESPONSE_EDGE_COLOR = 'rgb(0,0,0)'
 GROUP_REPLY_COLOR = 'rgb(105,105,105)'
 IGNORANT_COLOR = 'rgb(0,0,0)'

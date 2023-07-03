@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import sympy as sy
@@ -10,9 +11,9 @@ from ..utils import StatsProvider as Sp
 class LnkAlg:
     def __init__(self, graph, graph_name, discard_rate, back_rate, post_rate):
         self.start_node = None
-        self.lower_bound = 1
-        self.upper_bound = 1.01
-        self.interval_increase = 0.01
+        self.lower_bound = 0.3
+        self.upper_bound = 0.4
+        self.interval_increase = 0.1
         self.exponent = -3 / 2
         self.integral_array = []
         self.values = []
@@ -20,7 +21,7 @@ class LnkAlg:
         self.graph = nx.Graph  # remove this
         self.graph_name = graph_name
         self.START_FOLDER = 'fullSimData'
-        self.ITERATION_COUNT = 100001
+        self.IDLE_CUTOFF = 200
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
@@ -38,7 +39,7 @@ class LnkAlg:
 
     def generate_t_probabilities(self):
         x = sy.Symbol("x")
-        print(sy.integrate(self.f(x), (x, self.lower_bound, self.upper_bound)))
+        print("calculating time distribution...")
 
         while self.upper_bound <= 20:  # 20
             interval_integral = sy.integrate(self.f(x), (x, self.lower_bound, self.upper_bound))
@@ -48,69 +49,32 @@ class LnkAlg:
             self.lower_bound = self.upper_bound
             self.upper_bound += self.interval_increase
 
-        print(self.integral_array)
-
         for i in range(len(self.integral_array)):
             self.values.append(self.integral_array[i][1])
             self.probabilities.append(self.integral_array[i][2])
 
+        print("time distribution calculated")
+
     def generate_t(self):  # returns int
         return int(10 * random.choices(self.values, weights=self.probabilities)[0])
 
-    def getOnlyColoredNodes(self):
-        ret_graph = nx.Graph()
-        for node in self.graph.nodes:
-            displayed_color = self.graph.nodes[node]['displayed_color']
-            if displayed_color in [Gt.POST_COLOR, Gt.RESPONSE_COLOR, Gt.START_COLOR]:
-                node_to_add = self.graph.nodes[node]
-                ret_graph.add_node(
-                    node_to_add['id'],
-                    x=node_to_add['x'],
-                    y=node_to_add['y'],
-                    size=node_to_add['size'],
-                    displayed_color=node_to_add['displayed_color'],
-                    label=node_to_add['label'],
-                    id=node_to_add['id']
-                )
-        i = 1
-        for node in ret_graph:
-            for neighbor in ret_graph:
-                if self.graph.has_edge(node, neighbor) \
-                        and node != neighbor \
-                        and self.graph.get_edge_data(node, neighbor)['displayed_color'] == Gt.RESPONSE_EDGE_COLOR:
-                    ret_graph.add_edge(
-                        node,
-                        neighbor,
-                        displayed_color=Gt.RESPONSE_EDGE_COLOR,
-                        size=1,
-                        id=i
-                    )
-                    i += 1
-
-        return ret_graph
-
     def run_alg(self, is_hub_start):
-        # start_node = random.sample(self.graph.nodes, 1)
-        # start_node = self.graph.nodes[str(random.randint(1, self.graph.number_of_nodes()))]
-        # start_node = self.graph.nodes['486']  # TODO for editedGraph, don't forget to remove !
-        # self.start_node = self.graph.nodes['422']  # TODO for emaileuall, don't forget to remove !
-        # start_node = self.graph.nodes['1']    # TODO for barabasi-albert testing, don't forget to remove !
-        # start_node = self.graph.nodes['105']     # TODO for small_graph testing, don't forget to remove !
-        # start_node = self.graph.nodes['122']
-
         if is_hub_start:
-            # self.start_node = self.get_hub_start(Gt.HUB_THRESHOLD)
-            # self.start_node = self.graph.nodes[Gt.get_hub_start(self.graph, Gt.HUB_THRESHOLD)]
             self.start_node = self.graph.nodes[Gt.get_largest_hub(self.graph)]
         else:
             self.start_node = self.graph.nodes[random.sample(self.graph.nodes, 1)[0]]
 
+        last_activity_time = 0
         ret_array = []
         ret_graph_with_group_reply = nx.Graph()
         ret_graph_with_group_reply_edge_id = 1
         Gt.add_node_to_graph(ret_graph_with_group_reply, self.start_node)
 
-        active_nodes = [[] for _ in range(self.ITERATION_COUNT)]
+        ret_graph_responders = nx.Graph()
+        ret_graph_responders_edge_id = 1
+        Gt.add_node_to_graph(ret_graph_responders, self.start_node)
+
+        active_nodes = [[] for _ in range(1000)]
         responders = []
         for node in self.graph.neighbors(self.start_node['id']):
             if random.random() - self.discard_rate >= 0:
@@ -118,7 +82,16 @@ class LnkAlg:
                 nx.set_node_attributes(self.graph, {node: t}, name="t")
                 active_nodes[t].append((self.start_node['id'], node))
 
-        for i in range(self.ITERATION_COUNT):  # todo select better range
+        i = 0
+        while last_activity_time < self.IDLE_CUTOFF:
+            if len(active_nodes) - i < 500:
+                active_nodes.extend([[] for _ in range(1000)])
+
+            if not active_nodes[i]:
+                last_activity_time += 1
+            else:
+                last_activity_time = 0
+
             for node_pair in active_nodes[i]:
                 receiver = node_pair[1]
                 sender = node_pair[0]
@@ -140,6 +113,15 @@ class LnkAlg:
                                                         id=ret_graph_with_group_reply_edge_id
                                                         )
                     ret_graph_with_group_reply_edge_id += 1
+
+                    Gt.add_node_to_graph(ret_graph_responders, receiver_node)
+                    ret_graph_responders.add_edge(sender,
+                                                  receiver,
+                                                  displayed_color=Gt.RESPONSE_EDGE_COLOR,
+                                                  size=1,
+                                                  id=ret_graph_responders_edge_id
+                                                  )
+                    ret_graph_responders_edge_id += 1
 
                     for neighbor in self.graph.neighbors(receiver):
                         if random.random() - self.discard_rate >= 0:
@@ -167,17 +149,39 @@ class LnkAlg:
                                                         id=ret_graph_with_group_reply_edge_id)
                     ret_graph_with_group_reply_edge_id += 1
 
+            i += 1
 
-            self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
-            if i == 100000:
-                ret_graph = self.getOnlyColoredNodes()
-                ret_array.append(ret_graph)
-                ret_array.append(ret_graph_with_group_reply)
-                ret_tree = Gt.treeify(ret_graph, to_start=True)
-                ret_array.append(ret_tree)
-                if nx.is_tree(ret_tree):
-                    ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
-                    ret_array.append(ordered_tree)
+        self.graph.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
+        ret_graph_with_group_reply.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
+        ret_graph_responders.nodes[self.start_node['id']]['displayed_color'] = Gt.START_COLOR
+
+        ret_array.append(ret_graph_responders)
+        ret_array.append(ret_graph_with_group_reply)
+        print('number of nodes forwarding email is ' + str(nx.number_of_nodes(ret_graph_responders)))
+
+        number_of_interacting_nodes = nx.number_of_nodes(ret_graph_with_group_reply)
+        print('number of nodes responding to email is ' + str(number_of_interacting_nodes))
+
+        ret_tree = Gt.treeify(ret_graph_responders, to_start=True)
+        ret_array.append(ret_tree)
+        ordered_tree = None
+        if nx.is_tree(ret_tree):
+            ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
+            ret_array.append(ordered_tree)
+
+        if 2442 <= number_of_interacting_nodes:
+            with open(self.START_FOLDER + '/graph_with_group_reply.json', 'w') as f:
+                json.dump(Gt.nx_to_json(ret_graph_with_group_reply), f)
+
+            with open(self.START_FOLDER + '/graph_responders.json', 'w') as f2:
+                json.dump(Gt.nx_to_json(ret_graph_responders), f2)
+
+            with open(self.START_FOLDER + '/tree.json', 'w') as f3:
+                json.dump(Gt.nx_to_json(ret_tree), f3)
+
+            if nx.is_tree(ret_tree) and ordered_tree is not None:
+                with open(self.START_FOLDER + '/ordered_tree.json', 'w') as f4:
+                    json.dump(Gt.nx_to_json(ordered_tree), f4)
 
         return ret_array
 

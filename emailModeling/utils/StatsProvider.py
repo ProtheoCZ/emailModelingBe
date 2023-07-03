@@ -24,7 +24,7 @@ def get_full_sim_dir_name(config_path):
         return config_file.readline()
 
 
-FULL_SIM_DIR = get_full_sim_dir_name('c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/FULL_SIM_DIR.txt')
+FULL_SIM_DIR = get_full_sim_dir_name('emailModeling/FULL_SIM_DIR.txt')
 
 
 def get_children_stats(graph, root):
