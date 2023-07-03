@@ -107,10 +107,6 @@ def treeify(graph, to_start=False):
                     id=edge_id
                 )
                 edge_id += 1
-    is_tree = nx.is_tree(ret_graph)
-    print("is_tree = " + str(is_tree))
-    # if is_tree:
-    #     ret_graph = self.order_tree(ret_graph, start_node['id'])
     return ret_graph
 
 

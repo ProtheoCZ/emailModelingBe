@@ -21,7 +21,7 @@ class LnkAlg:
         self.graph = nx.Graph  # remove this
         self.graph_name = graph_name
         self.START_FOLDER = 'fullSimData'
-        self.IDLE_CUTOFF = 200
+        self.IDLE_CUTOFF = 200   # depends on time distribution length
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
