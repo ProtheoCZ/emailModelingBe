@@ -65,7 +65,7 @@ def get_children_stats(graph, root):
     return result_stats
 
 
-def get_tree_stats(graph, root, is_hub_start, with_node_distances=False):
+def get_tree_stats(graph, root, is_hub_start, with_node_distances=True):
     if isinstance(graph, nx.Graph):
         is_tree = nx.is_tree(graph)
         node_count = nx.number_of_nodes(graph)
@@ -148,7 +148,7 @@ def get_stats(tree, root, graph_name, is_hub_start, run_id, sim_id, graph, graph
         json.dump(run_result, json_file)
 
 
-def get_graph_stats(graph, graph_with_group_reply, start_node_id, with_node_distances=False):
+def get_graph_stats(graph, graph_with_group_reply, start_node_id, with_node_distances=True):
     if isinstance(graph, nx.Graph):
         node_count = graph.number_of_nodes()
         post_nodes = 0

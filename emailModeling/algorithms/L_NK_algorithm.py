@@ -21,7 +21,7 @@ class LnkAlg:
         self.graph = nx.Graph  # remove this
         self.graph_name = graph_name
         self.START_FOLDER = 'fullSimData'
-        self.IDLE_CUTOFF = 200   # depends on time distribution length
+        self.IDLE_CUTOFF = 200   # depends on time distribution
 
         if isinstance(graph, nx.Graph):
             self.graph = graph
@@ -234,6 +234,7 @@ class LnkAlg:
                                      run_number,
                                      sim_id,
                                      graph,
+                                     # graph_with_back_rate,
                                      graph_with_back_rate
                                      )
 
