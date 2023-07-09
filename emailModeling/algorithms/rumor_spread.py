@@ -14,7 +14,7 @@ OPPONENT = 'opponent'
 NEUTRAL = 'neutral'
 SUPPORTER = 'supporter'
 
-TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/Core2/'
+TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/TimeEvolution/'
 
 
 # When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
@@ -140,9 +140,9 @@ def rumor_spread(graph,
         spreader_lens.append(len(spreaders))
         stifler_lens.append(len(stiflers))
 
-    assign_visual_colors(graph)
+    # assign_visual_colors(graph)
     assign_visual_colors(ret_graph)
-    ret_graphs = [graph, ret_graph]
+    ret_graphs = [ret_graph]
 
     spread_node_count = nx.number_of_nodes(ret_graph)
     get_time_evolution(spreader_lens, stifler_lens, spreader_to_stifler_chance, cessation_chance, spread_node_count)
@@ -250,7 +250,7 @@ def run_full_rumor_spread(graph_name,
                              is_hub_start,
                              run_number,
                              sim_id,
-                             graphs[1]
+                             graphs[0]
                              )
 
             print("run #" + str(run_number) + " of " + str(run_count))

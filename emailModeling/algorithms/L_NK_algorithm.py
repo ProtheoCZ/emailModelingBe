@@ -163,11 +163,13 @@ class LnkAlg:
         print('number of nodes responding to email is ' + str(number_of_interacting_nodes))
 
         ret_tree = Gt.treeify(ret_graph_responders, to_start=True)
-        ret_array.append(ret_tree)
-        ordered_tree = None
+        # ret_array.append(ret_tree)
         if nx.is_tree(ret_tree):
             ordered_tree = Gt.order_tree(ret_tree, self.start_node['id'])
-            ret_array.append(ordered_tree)
+        else:
+            ordered_tree = nx.Graph()
+
+        ret_array.append(ordered_tree)
 
         if 2442 <= number_of_interacting_nodes:
             with open(self.START_FOLDER + '/graph_with_group_reply.json', 'w') as f:
