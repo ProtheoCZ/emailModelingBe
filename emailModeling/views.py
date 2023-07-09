@@ -15,6 +15,7 @@ from django.http import JsonResponse
 
 from django.views.decorators.csrf import csrf_exempt
 
+
 @csrf_exempt
 def get_graph(request):  # POST
     # file = open('graphData/editedGraphBigger.json')
@@ -90,14 +91,7 @@ def get_rumor_sim(request):
 @csrf_exempt
 def get_full_rumor_sim(request):
     if len(request.body.decode('utf-8')) > 0:
-        run_full_rumor_spread(request.body.decode('utf-8'), 2, False)
-    return JsonResponse({"graphs": [], "compatible": 1})
-
-
-@csrf_exempt
-def get_full_rumor_sim2(request):
-    if len(request.body.decode('utf-8')) > 0:
-        run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 1, False)
+        run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 100, False)
     return JsonResponse({"graphs": [], "compatible": 1})
 
 

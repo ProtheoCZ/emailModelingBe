@@ -14,7 +14,7 @@ OPPONENT = 'opponent'
 NEUTRAL = 'neutral'
 SUPPORTER = 'supporter'
 
-TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/All/'
+TIME_EVOLUTION_GRAPH_FOLDER = 'rumourTimeEvolution/Core2/'
 
 
 # When a spreader contacts another spreader or a stifler the initiating spreader becomes a stifler at a rate alfa.
@@ -28,7 +28,7 @@ def simulate_rumor_spread(graph_name):
 
     if isGraphCompatible(json_graph):
         graph = json_to_nx(json_graph)
-        ret_graphs = rumor_spread(graph, True, 0.75, 1)
+        ret_graphs = rumor_spread(graph, False, 0.02, 0.16)
         for graph in ret_graphs:
             ret_json["graphs"].append(Gt.nx_to_json(graph))
         ret_json["compatible"] = 1
@@ -111,12 +111,9 @@ def rumor_spread(graph,
     stifler_lens = [len(stiflers)]
 
     while len(spreaders) > 0:
-        # current_node_pair = queue.pop(0)
-        # current_node_id = current_node_pair[1]
         current_node_id = random.sample(spreaders, 1)[0]
 
         if random.random() > cessation_chance:
-            # for neighbor in graph.neighbors(current_node_id):
             neighbors = [n for n in graph.neighbors(current_node_id)]
             neighbor = random.sample(neighbors, 1)[0]
 
@@ -187,7 +184,6 @@ def convert_ignorant(current_node_id, neighbor_id, graph, spreaders, ret_graph, 
     neighbor_node = graph.nodes[neighbor_id]
 
     lambda_chance = get_ignorant_to_spreader_chance(neighbor_node)
-    # lambda_chance = 0.3 #todo: remove
 
     if random.random() <= lambda_chance:
         neighbor_node['rumor_group'] = SPREADER
@@ -217,12 +213,10 @@ def convert_ignorant(current_node_id, neighbor_id, graph, spreaders, ret_graph, 
 def run_full_rumor_spread(graph_name,
                           run_count,
                           is_hub_start: bool,
-                          spreader_to_stifler_increase=0,
-                          cessation_increase=0,
                           export_stats=True,
                           initial_cessation_chance=0,
                           initial_spreader_to_stifler_chance=0,
-                          with_random_access=True):
+                          ):
     json_graph = Gt.json_loader(graph_name)
 
     if isGraphCompatible(json_graph):
@@ -235,50 +229,32 @@ def run_full_rumor_spread(graph_name,
         cessation_chance = initial_cessation_chance
         spreader_to_stifler_chance = initial_spreader_to_stifler_chance
 
-        # cessation_runs = int(round((1 / cessation_increase) + 1))
-        cessation_runs = 10
-        # spreader_to_stifler_runs = int(round((1 / spreader_to_stifler_increase) + 1))
-        spreader_to_stifler_runs = 10
-
         run_number = 1
 
         for i in range(run_count):
-            for j in range(cessation_runs):
-                for k in range(spreader_to_stifler_runs):
-                    if is_hub_start:
-                        # start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
-                        start_node_id = Gt.get_largest_hub(graph)
-                    else:
-                        start_node_id = random.sample(graph.nodes, 1)[0]
+            if is_hub_start:
+                start_node_id = Gt.get_largest_hub(graph)
+            else:
+                start_node_id = random.sample(graph.nodes, 1)[0]
 
-                    if with_random_access:
-                        graphs = rumor_spread(graph.copy(),
-                                              is_hub_start,
-                                              cessation_chance,
-                                              spreader_to_stifler_chance,
-                                              start_node_id)
-                    else:
-                        graphs = rumor_spread_without_random_activation(graph.copy(),
-                                                                        is_hub_start,
-                                                                        cessation_chance,
-                                                                        spreader_to_stifler_chance,
-                                                                        start_node_id)
+            graphs = rumor_spread(graph.copy(),
+                                  is_hub_start,
+                                  cessation_chance,
+                                  spreader_to_stifler_chance,
+                                  start_node_id)
 
-                    if export_stats:
-                        Sp.get_stats(None,
-                                     start_node_id,
-                                     graph_name,
-                                     is_hub_start,
-                                     run_number,
-                                     sim_id,
-                                     graphs[1]
-                                     )
+            if export_stats:
+                Sp.get_stats(None,
+                             start_node_id,
+                             graph_name,
+                             is_hub_start,
+                             run_number,
+                             sim_id,
+                             graphs[1]
+                             )
 
-                    print(
-                        "run #" + str(run_number) + " of " + str(run_count * cessation_runs * spreader_to_stifler_runs))
-                    spreader_to_stifler_chance += spreader_to_stifler_increase
-                    run_number += 1
-                cessation_chance += cessation_increase
+            print("run #" + str(run_number) + " of " + str(run_count))
+            run_number += 1
 
         if export_stats:
             Sp.get_summary_stats(sim_id, 'rumor relatability', 1000, False)
@@ -303,10 +279,8 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
                                              run_count,
                                              is_hub_start: bool
                                              ):
-    # cessation_chance = 0
-    # spreader_to_stifler_chance = 0
-    run_params = get_run_params(
-        'c:/Users/Tomas/PycharmProjects/emailModelingBe/emailModeling/rumour_spread_limits.json') #todo relative path
+
+    run_params = get_run_params('emailModeling/rumour_spread_limits.json')
 
     cessation_chance = run_params["cessation_start"]
     spreader_to_stifler_start_chance = run_params["spreader_to_stifler_start"]
@@ -320,6 +294,9 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
     cessation_runs = run_params["cessation_runs"]
     spreader_to_stifler_runs = run_params["spreader_to_stifler_runs"]
 
+    simulation_count = cessation_runs * spreader_to_stifler_runs
+    current_simulation = 1
+
     for i in range(cessation_runs):
         spreader_to_stifler_chance = spreader_to_stifler_start_chance
         for j in range(spreader_to_stifler_runs):
@@ -330,7 +307,10 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
                                   initial_spreader_to_stifler_chance=spreader_to_stifler_chance,
                                   )
 
+            print("simulation " + str(current_simulation) + " of " + str(simulation_count))
+            current_simulation += 1
             spreader_to_stifler_chance += spreader_to_stifler_increase
+
         cessation_chance += cessation_increase
 
 
@@ -348,11 +328,14 @@ def get_opponent_to_spreader_conversion_chance():
     average_opponent_reactions = [0.44, 0.30, 0.11, 0.08, 0.06, 0.01]
     weak_opponent_reactions = [0.29, 0.18, 0.11, 0.34, 0.08, 0.00]
 
-    strong_opponent_conversion_chance = strong_opponent_reactions[-1] + strong_opponent_reactions[-2]
+    strong_opponent_conversion_chance = strong_opponent_reactions[-1] \
+                                        + strong_opponent_reactions[-2]
 
-    average_opponent_conversion_chance = average_opponent_reactions[-1] + average_opponent_reactions[-2]
+    average_opponent_conversion_chance = average_opponent_reactions[-1] \
+                                         + average_opponent_reactions[-2]
 
-    weak_opponent_conversion_chance = weak_opponent_reactions[-1] + weak_opponent_reactions[-2]
+    weak_opponent_conversion_chance = weak_opponent_reactions[-1] \
+                                      + weak_opponent_reactions[-2]
 
     conversion_chances = [strong_opponent_conversion_chance,
                           average_opponent_conversion_chance,
@@ -477,114 +460,3 @@ def get_time_evolution(spreader_lens, stifler_lens, spreader_to_stifler_chance, 
         json.dump(time_evolution_stats, file)
 
 
-def rumor_spread_without_random_activation(graph,
-                                           is_hub_start: bool = False,
-                                           cessation_chance=0.5,
-                                           spreader_to_stifler_chance=0.5,
-                                           start_node_id=None):
-    if start_node_id is None:
-        if is_hub_start:
-            start_node_id = Gt.get_largest_hub(graph)
-        else:
-            start_node_id = random.sample(graph.nodes, 1)[0]
-
-    ret_graph = nx.Graph()
-    start_node = graph.nodes[start_node_id]
-    start_node['rumor_group'] = SPREADER
-    ret_graph.add_node(
-        start_node_id,
-        x=start_node['x'],
-        y=start_node['y'],
-        size=start_node['size'],
-        displayed_color=start_node['displayed_color'],
-        label=start_node['label'],
-        id=start_node['id'],
-        population_group=start_node['population_group'],
-        rumor_group=start_node['rumor_group']
-    )
-
-    queue = []  # (sender, receiver)
-    current_edge_id = 1
-    spreaders = {start_node_id}
-
-    for neighbor in graph.neighbors(start_node_id):
-        convert_ignorant_without_random_access(start_node_id, neighbor, graph, queue, ret_graph, current_edge_id,
-                                               spreaders)
-        current_edge_id += 1
-
-    stiflers = set()
-    spreader_lens = [len(spreaders)]
-    stifler_lens = [len(stiflers)]
-
-    while len(queue) > 0:
-        current_node_pair = queue.pop(0)
-        current_node_id = current_node_pair[1]
-        if graph.nodes[current_node_id]['rumor_group'] == SPREADER:
-            if random.random() > cessation_chance:
-                for neighbor in graph.neighbors(current_node_id):
-                    neighbor_rumor_group = graph.nodes[neighbor]['rumor_group']
-                    if neighbor_rumor_group == IGNORANT:
-                        convert_ignorant_without_random_access(current_node_id, neighbor, graph, queue, ret_graph,
-                                                               current_edge_id, spreaders)
-                        current_edge_id += 1
-                    elif neighbor_rumor_group == SPREADER or neighbor_rumor_group == STIFLER:
-                        if random.random() <= spreader_to_stifler_chance:
-                            graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                            ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                            stiflers.add(current_node_id)
-                            if current_node_id in spreaders:
-                                spreaders.remove(current_node_id)
-
-                        elif neighbor_rumor_group == SPREADER:
-                            queue.append((current_node_id, neighbor))
-                            spreaders.add(current_node_id)
-
-            else:
-                if current_node_id in spreaders:
-                    spreaders.remove(current_node_id)
-                graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                ret_graph.nodes[current_node_id]['rumor_group'] = STIFLER
-                stiflers.add(current_node_id)
-
-        spreader_lens.append(len(spreaders))
-        stifler_lens.append(len(stiflers))
-
-    spread_node_count = nx.number_of_nodes(ret_graph)
-    get_time_evolution(spreader_lens, stifler_lens, spreader_to_stifler_chance, cessation_chance, spread_node_count)
-    assign_visual_colors(graph)
-    assign_visual_colors(ret_graph)
-    ret_graphs = [graph, ret_graph]
-
-    return ret_graphs
-
-
-def convert_ignorant_without_random_access(current_node_id, neighbor_id, graph, queue, ret_graph, current_edge_id,
-                                           spreaders):
-    neighbor_node = graph.nodes[neighbor_id]
-
-    lambda_chance = get_ignorant_to_spreader_chance(neighbor_node)
-
-    if random.random() <= lambda_chance:
-        neighbor_node['rumor_group'] = SPREADER
-        queue.append((current_node_id, neighbor_id))
-
-        spreaders.add(neighbor_id)
-        ret_graph.add_node(
-            neighbor_id,
-            x=neighbor_node['x'],
-            y=neighbor_node['y'],
-            size=neighbor_node['size'],
-            displayed_color=neighbor_node['displayed_color'],
-            label=neighbor_node['label'],
-            id=neighbor_node['id'],
-            population_group=neighbor_node['population_group'],
-            rumor_group=neighbor_node['rumor_group']
-        )
-
-        ret_graph.add_edge(
-            current_node_id,
-            neighbor_id,
-            displayed_color=Gt.RESPONSE_EDGE_COLOR,
-            size=1,
-            id=current_edge_id
-        )

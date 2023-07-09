@@ -18,7 +18,7 @@ class LnkAlg:
         self.integral_array = []
         self.values = []
         self.probabilities = []
-        self.graph = nx.Graph  # remove this
+        self.graph = nx.Graph
         self.graph_name = graph_name
         self.START_FOLDER = 'fullSimData'
         self.IDLE_CUTOFF = 200   # depends on time distribution
