@@ -36,7 +36,7 @@ def simulate_rumor_spread(graph_name):
     return ret_json
 
 
-def isGraphCompatible(graph):
+def isGraphCompatible(graph):  # fast but not 100% accurate
     try:
         random.sample(graph['nodes'], 1)[0]['population_group']
         return True
@@ -79,7 +79,6 @@ def rumor_spread(graph,
                  start_node_id=None):
     if start_node_id is None:
         if is_hub_start:
-            # start_node_id = Gt.get_hub_start(graph, Gt.HUB_THRESHOLD)
             start_node_id = Gt.get_largest_hub(graph)
         else:
             start_node_id = random.sample(graph.nodes, 1)[0]
@@ -99,7 +98,6 @@ def rumor_spread(graph,
         rumor_group=start_node['rumor_group']
     )
 
-    # queue = []  # (sender, receiver)
     current_edge_id = 1
     spreaders = {start_node_id}
     for neighbor in graph.neighbors(start_node_id):
@@ -140,7 +138,6 @@ def rumor_spread(graph,
         spreader_lens.append(len(spreaders))
         stifler_lens.append(len(stiflers))
 
-    # assign_visual_colors(graph)
     assign_visual_colors(ret_graph)
     ret_graphs = [ret_graph]
 
@@ -187,7 +184,6 @@ def convert_ignorant(current_node_id, neighbor_id, graph, spreaders, ret_graph, 
 
     if random.random() <= lambda_chance:
         neighbor_node['rumor_group'] = SPREADER
-        # queue.append((current_node_id, neighbor_id))
         spreaders.add(neighbor_id)
         ret_graph.add_node(
             neighbor_id,
@@ -279,7 +275,6 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
                                              run_count,
                                              is_hub_start: bool
                                              ):
-
     run_params = get_run_params('emailModeling/rumour_spread_limits.json')
 
     cessation_chance = run_params["cessation_start"]
@@ -287,9 +282,6 @@ def run_full_rumor_spread_with_param_scaling(graph_name,
 
     cessation_increase = 0.02
     spreader_to_stifler_increase = 0.02
-
-    # cessation_runs = int(1/cessation_increase) + 1
-    # spreader_to_stifler_runs = int(1/spreader_to_stifler_increase) + 1
 
     cessation_runs = run_params["cessation_runs"]
     spreader_to_stifler_runs = run_params["spreader_to_stifler_runs"]
@@ -458,5 +450,3 @@ def get_time_evolution(spreader_lens, stifler_lens, spreader_to_stifler_chance, 
 
     with open(path_to_time_evolution, 'w', encoding='utf-8') as file:
         json.dump(time_evolution_stats, file)
-
-

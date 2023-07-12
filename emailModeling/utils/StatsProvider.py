@@ -12,13 +12,6 @@ from ..utils import GraphTools as Gt
 RECORDED_CHILDREN_COUNT = 10
 
 
-# FULL_SIM_DIR = 'fullSimStats'
-
-# POST_COLOR = 'rgb(0,255,0)'
-# RESPONSE_COLOR = 'rgb(0,0,255)'
-# START_COLOR = 'rgb(242,245,66)'
-
-
 def get_full_sim_dir_name(config_path):
     with open(config_path) as config_file:
         return config_file.readline()
