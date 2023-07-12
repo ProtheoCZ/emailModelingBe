@@ -53,7 +53,7 @@ def get_full_lnk_sim(request):
 
 @csrf_exempt
 def get_full_gw_sim(request):
-    full_gw_sim(10)
+    full_gw_sim(10000)
     return JsonResponse({"graphs": [], "compatible": 1})
 
 
@@ -68,7 +68,7 @@ def get_rumor_sim(request):
 @csrf_exempt
 def get_full_rumor_sim(request):
     if len(request.body.decode('utf-8')) > 0:
-        run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 1, False)
+        run_full_rumor_spread_with_param_scaling(request.body.decode('utf-8'), 100, False)
     return JsonResponse({"graphs": [], "compatible": 1})
 
 
